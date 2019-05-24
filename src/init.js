@@ -1,3 +1,5 @@
+/* /src/init.js */
+let uid = 1;
 function initMixin(JSCropper){
     JSCropper.prototype._init = function(options){
         this._originOpts = options;
@@ -18,7 +20,9 @@ function initMixin(JSCropper){
             scalable: true,
             scaleStep: 0.02,
         },options);
-        this._zoom = 2;
+        this._uid = uid++;
+
+        this.initCropperBox();
     };
 }
 

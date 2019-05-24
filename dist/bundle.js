@@ -11,6 +11,9 @@
     (global = global || self, global.library = factory());
 }(this, function () { 'use strict';
 
+    /* /src/init.js */
+    var uid = 1;
+
     function initMixin(JSCropper) {
       JSCropper.prototype._init = function (options) {
         this._originOpts = options;
@@ -31,8 +34,13 @@
           scalable: true,
           scaleStep: 0.02
         }, options);
-        this._zoom = 2;
+        this._uid = uid++;
+        this.initCropperBox();
       };
+    }
+
+    function initCropperBox(JSCropper) {
+      JSCropper.prototype.initCropperBox = function () {};
     }
 
     /* /src/index.js */
@@ -42,6 +50,7 @@
     };
 
     initMixin(JSCropper);
+    initCropperBox(JSCropper);
 
     return JSCropper;
 

@@ -7,6 +7,9 @@
 
 'use strict';
 
+/* /src/init.js */
+var uid = 1;
+
 function initMixin(JSCropper) {
   JSCropper.prototype._init = function (options) {
     this._originOpts = options;
@@ -27,8 +30,13 @@ function initMixin(JSCropper) {
       scalable: true,
       scaleStep: 0.02
     }, options);
-    this._zoom = 2;
+    this._uid = uid++;
+    this.initCropperBox();
   };
+}
+
+function initCropperBox(JSCropper) {
+  JSCropper.prototype.initCropperBox = function () {};
 }
 
 /* /src/index.js */
@@ -38,5 +46,6 @@ var JSCropper = function JSCropper(options) {
 };
 
 initMixin(JSCropper);
+initCropperBox(JSCropper);
 
 module.exports = JSCropper;

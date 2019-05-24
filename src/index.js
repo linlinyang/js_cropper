@@ -1,5 +1,6 @@
 /* /src/index.js */
 import {initMixin} from './init';
+import {initCropperBox} from './croperBox';
 
 class JSCropper{
 
@@ -10,8 +11,8 @@ class JSCropper{
 }
 
 initMixin(JSCropper);
-/* initImage(JSCropper);
 initCropperBox(JSCropper);
+/* initImage(JSCropper);
 initCanvas(JSCropper);
 initEvents(JSCropper); */
 

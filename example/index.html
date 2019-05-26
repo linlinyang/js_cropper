@@ -19,12 +19,50 @@
 	    table { border-collapse:collapse; }
 	    html {overflow-y: scroll;}
     
+		.cropper-box{
+			width: 100%;
+			text-align: center;
+			margin-top: 30px;
+		}
     </style>
+    <script src="../dist/JSCropper.js"></script>
 </head>
 <body>
-    
-    
 
-    <script src="../dist/bundle.js"></script>
+	<div class="cropper-box">
+		<canvas id="cropper"></canvas>
+	</div>
+
+	<input type="file" accept="image/jpeg,image/jpg,image/png">
+
+	<script>
+
+		window.addEventListener('DOMContentLoaded',ready,false);
+
+		function ready(){
+			var jc = new JSCropper({
+				el: '#cropper',
+				img: './images/pic.jpg'
+			});
+			console.log(jc);
+
+			var input = document.querySelector('input');
+			input.addEventListener('change',function(e){
+				var file = input.files[0];
+				var reader = new FileReader();
+				reader.readAsDataURL(file);
+				reader.onload = function(e){
+
+					var img = new Image();
+					img.onload = function(){
+						console.log(img === img);
+					}
+					img.src = this.result;
+				};
+			},false);
+		}
+
+	</script>
+
 </body>
 </html>

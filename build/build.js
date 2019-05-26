@@ -9,29 +9,31 @@ import {uglify} from 'rollup-plugin-uglify';
 
 const path = require('path');
 const resolve = _path => path.resolve(__dirname,'../',_path);
-const version = process.env.VERSION || require('../package.json').version;
+const packageInfo = require('../package.json');
+const version = process.env.VERSION || packageInfo.version;
+const authorName = packageInfo.author;
 const banner = 
 `/* !
-  * library v${version}
-  * https://github.com/  (github address)
+  * JSCropper v${version}
+  * https://github.com/linlinyang/js_cropper.git
   * 
-  * (c) ${new Date().getFullYear()} AuthorName
+  * (c) ${new Date().getFullYear()} ${authorName}
   */
 `;
 
 const outputs = [{
-    file: resolve('dist/bundle.js'),
+    file: resolve('dist/JSCropper.js'),
     format: 'umd',
     env: 'development'
 },{
-    file: resolve('dist/bundle.min.js'),
+    file: resolve('dist/JSCropper.min.js'),
     format: 'umd',
     env: 'production'
 },{
-    file: resolve('dist/bundle.common.js'),
+    file: resolve('dist/JSCropper.common.js'),
     format: 'cjs'
 },{
-    file: resolve('dist/bundle.esm.js'),
+    file: resolve('dist/JSCropper.esm.js'),
     format: 'es'
 }];
 
@@ -56,7 +58,7 @@ function buildRollupConfig(output){
             file: output.file,
             format: output.format,
             banner,
-            name: 'library'
+            name: 'JSCropper'
         }
     };
 

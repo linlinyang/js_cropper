@@ -1,15 +1,19 @@
 /* /src/init.js */
+import { callHook } from './lifeCircle';
+
 let uid = 1;
 function initMixin(JSCropper){
     JSCropper.prototype._init = function(options){
-        this._originOpts = options;
-        Object.assign(this,{
+        const jc = this;
+
+        jc._originOpts = options;
+        Object.assign( jc, {
             maxSize: 2000,
             cropperWidth: 800,
             cropperHeight: 600,
             width: 300,
             height: 300,
-            shadowColor: rgba(0,0,0,0.7),
+            shadowColor: 'rgba(0,0,0,0.7)',
             edgeLineColor: '#fff',
             edgeLineWidth: 3,
             dashLineColor: 'rgba(255,255,255,0.8)',
@@ -18,11 +22,13 @@ function initMixin(JSCropper){
             inSelectBackColor: 'rgba(0,0,0,0.6)',
             selectBackColor: 'rgba(0,0,0,0.2)',
             scalable: true,
-            scaleStep: 0.02,
-        },options);
-        this._uid = uid++;
+            scaleStep: 0.02
+        }, options);
+        jc._uid = uid++;
+        
+        jc._redraw();
 
-        this.initCropperBox();
+        callHook(jc,'created');
     };
 }
 

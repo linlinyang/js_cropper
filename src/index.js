@@ -1,6 +1,10 @@
 /* /src/index.js */
-import {initMixin} from './init';
-import {initCropperBox} from './croperBox';
+import './polyfill/index';
+import { initMixin } from './init';
+import { canvasMixin } from './canvas';
+import { lifyCircleMixin } from './lifeCircle';
+import { drawMixin } from './draw';
+//import {initCropperBox} from './croperBox';
 
 class JSCropper{
 
@@ -11,10 +15,10 @@ class JSCropper{
 }
 
 initMixin(JSCropper);
-initCropperBox(JSCropper);
-/* initImage(JSCropper);
-initCanvas(JSCropper);
-initEvents(JSCropper); */
+lifyCircleMixin(JSCropper);
+canvasMixin(JSCropper);
+drawMixin(JSCropper);
 
+JSCropper.version = '__VERSION__';
 
 export default JSCropper;

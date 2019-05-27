@@ -347,6 +347,7 @@ function rect(ctx, x, y, width, height, counterClockWise, isSolid) {
   if (counterClockWise === void 0) counterClockWise = false;
   if (isSolid === void 0) isSolid = false;
   var lineWidth = ctx.lineWidth;
+  console.log(lineWidth);
   var xDistance = x + width;
   var yDistance = y + height;
 
@@ -427,11 +428,19 @@ function drawCropGride(jc) {
   var edgeLineColor = jc.edgeLineColor;
   var ctx = bufferCanvas.getContext('2d');
   ctx.save();
-  ctx.lineWidth = 1; //ctx.strokeStyle = edgeLineColor;
+  ctx.lineWidth = 1; //ctx.strokeStyle = edgeLineColor * zoom;
 
   ctx.strokeStyle = 'red';
-  ctx.beginPath();
-  rect(ctx, x, y, width * zoom, height * zoom, true, true);
+  ctx.beginPath(); //rect( ctx, x, y, width * zoom, height * zoom, true, true);
+
+  rect(ctx, 10, 10, 30, 30, false, true);
+  ctx.stroke();
+  rect(ctx, 50.5, 50.5, 30, 30, false, true);
+  ctx.stroke();
+  ctx.lineWidth = 2;
+  rect(ctx, 100, 100, 30, 30, false, true);
+  ctx.stroke();
+  rect(ctx, 150.5, 150.5, 30, 30, false, true);
   ctx.stroke();
   ctx.restore();
 }

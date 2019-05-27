@@ -67,6 +67,7 @@ function lineTo(ctx,x,y,isSolid = false){
  */
 function rect(ctx,x,y,width,height,counterClockWise = false,isSolid = false){
     const lineWidth = ctx.lineWidth;
+    console.log(lineWidth);
     let xDistance = x + width;
     let yDistance = y + height;
     if(isSolid){

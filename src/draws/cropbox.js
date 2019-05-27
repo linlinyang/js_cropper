@@ -1,4 +1,4 @@
-import {rect} from '../context2d/rect';
+import {rect} from '../context2d/lines';
 
 /* 
  * 重置裁剪框位置，在画布中间
@@ -53,10 +53,21 @@ function drawCropGride(jc){
         height,
         _x: x,
         _y: y,
-        _zoom: zoom
+        _zoom: zoom,
+        edgeLineColor
     } = jc;
     const ctx = bufferCanvas.getContext('2d');
     
+    ctx.save();
+
+    ctx.lineWidth = 1;
+    //ctx.strokeStyle = edgeLineColor;
+    ctx.strokeStyle = 'red';
+    ctx.beginPath();
+    rect( ctx, x, y, width * zoom, height * zoom, true, true);
+    ctx.stroke();
+
+    ctx.restore();
 }
 
 function drawCropBox(jc){

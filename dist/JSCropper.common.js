@@ -317,6 +317,20 @@ function drawImage(jc) {
 }
 
 /* 
+ * 画布线条操作
+ *
+ * 线条绘制时都是基于线条中间开始绘制，就会存在如下bug
+ * 
+ * 例如绘制一条(100,300)到(200,300)的水平线条
+ * 当要绘制的线条宽度是奇数时，假如设置为1，则线条就会在y轴方向299.5~300.5之间绘制一条线宽为1的直线，但是，由于canvas的渲染机制，无法渲染半个像素，所以299至301都会被填充，就会出现线条宽度变成2的效果，但是线条颜色会淡很多
+ * 当要绘制的线条宽度是偶数时，假如设置为2，则线条会在y轴方向300上向上向下扩张1px，即299~301之间绘制一条2px的直线，没有多余，所以线条颜色就是设置的颜色
+ * 
+ * 所以如果线宽是偶数时，线条的位置就要在整数的坐标上；反之，则要偏移半个像素来绘制所要达到的效果
+ */
+function convertNum(coord, lineWidth) {
+  return Math.floor(coord) + lineWidth % 2 / 2;
+}
+/* 
  * 根据方向绘制矩形，默认顺时针方向
  *
  * @params {CanvasRenderingContext2D} ctx;2d画布绘图对象
@@ -325,19 +339,37 @@ function drawImage(jc) {
  * @params {Number} width;矩形宽度
  * @params {Number} height;矩形高度
  * @params {Boolean} counterClockWise;是否逆时针绘制
+ * @params {Boolean} isSolid;是否需要转换为实线
  */
-function rect(ctx, x, y, width, height, counterClockWise) {
+
+
+function rect(ctx, x, y, width, height, counterClockWise, isSolid) {
   if (counterClockWise === void 0) counterClockWise = false;
+  if (isSolid === void 0) isSolid = false;
+  var lineWidth = ctx.lineWidth;
+  var xDistance = x + width;
+  var yDistance = y + height;
+
+  if (isSolid) {
+    x = convertNum(x, lineWidth);
+    y = convertNum(y, lineWidth);
+    xDistance = convertNum(x + width, lineWidth);
+    yDistance = convertNum(y + height, lineWidth);
+  }
 
   if (!counterClockWise) {
     //顺时针
-    ctx.rect(x, y, width, height);
+    ctx.moveTo(x, y);
+    ctx.lineTo(xDistance, y);
+    ctx.lineTo(xDistance, yDistance);
+    ctx.lineTo(x, yDistance);
+    ctx.lineTo(x, y);
   } else {
     //逆时针
     ctx.moveTo(x, y);
-    ctx.lineTo(x, y + height);
-    ctx.lineTo(x + width, y + height);
-    ctx.lineTo(x + width, y);
+    ctx.lineTo(x, yDistance);
+    ctx.lineTo(xDistance, yDistance);
+    ctx.lineTo(xDistance, y);
     ctx.lineTo(x, y);
   }
 }
@@ -392,7 +424,16 @@ function drawCropGride(jc) {
   var x = jc._x;
   var y = jc._y;
   var zoom = jc._zoom;
+  var edgeLineColor = jc.edgeLineColor;
   var ctx = bufferCanvas.getContext('2d');
+  ctx.save();
+  ctx.lineWidth = 1; //ctx.strokeStyle = edgeLineColor;
+
+  ctx.strokeStyle = 'red';
+  ctx.beginPath();
+  rect(ctx, x, y, width * zoom, height * zoom, true, true);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawCropBox(jc) {

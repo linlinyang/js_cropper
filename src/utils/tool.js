@@ -65,8 +65,13 @@ function getZoom(){
     return devicePixelRadio / backingStore;
 }
 
+function convertNum(num){
+    return Math.floor(num) + 0.5;
+}
+
 export {
     typeOf,
     distance,
-    getZoom
+    getZoom,
+    convertNum
 };

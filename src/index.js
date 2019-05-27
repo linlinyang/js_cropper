@@ -1,8 +1,8 @@
 /* /src/index.js */
 import './polyfill/index';
 import { initMixin } from './init';
-import { canvasMixin } from './canvas';
 import { lifyCircleMixin } from './lifeCircle';
+import { canvasMixin } from './canvas';
 import { drawMixin } from './draw';
 //import {initCropperBox} from './croperBox';
 

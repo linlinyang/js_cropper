@@ -19,3 +19,7 @@ function rect(ctx,x,y,width,height,counterClockWise = false){
         ctx.lineTo( x, y );
     }
 }
+
+export {
+    rect
+};

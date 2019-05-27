@@ -87,14 +87,33 @@ if (typeOf(Object.assign) !== 'function') {
   });
 }
 
-function callHook$1(jc, hook) {
+function callHook(jc, hook) {
   var handler = jc[hook];
   typeof handler === 'function' && handler.call(jc);
 }
 
 function lifyCircleMixin(JSCropper) {
+  JSCropper.prototype.update = function (options) {
+    var jc = this;
+    callHook(jc, 'beforeUpdate');
+
+    if (Object.keys(options) === 0) {
+      return;
+    }
+
+    Object.assign(jc, options);
+
+    jc._redraw();
+
+    callHook(jc, 'updated');
+  };
+
   JSCropper.prototype.destroy = function () {
-    callHook$1(this, 'beforeDestory');
+    callHook(this, 'beforeDestory');
+  };
+
+  JSCropper.prototype.reset = function () {
+    callHook(this, 'beforeReset');
   };
 }
 
@@ -106,7 +125,6 @@ function initMixin(JSCropper) {
     var jc = this;
     jc._originOpts = options;
     Object.assign(jc, {
-      maxSize: 2000,
       cropperWidth: 800,
       cropperHeight: 600,
       width: 300,
@@ -118,15 +136,13 @@ function initMixin(JSCropper) {
       quality: 1,
       imgType: 'image/png',
       inSelectBackColor: 'rgba(0,0,0,0.6)',
-      selectBackColor: 'rgba(0,0,0,0.2)',
-      scalable: true,
-      scaleStep: 0.02
+      selectBackColor: 'rgba(0,0,0,0.2)'
     }, options);
     jc._uid = uid++;
 
     jc._redraw();
 
-    callHook$1(jc, 'created');
+    callHook(jc, 'created');
   };
 }
 
@@ -158,7 +174,7 @@ function canvasMixin(JSCropper) {
 
   JSCropper.prototype._initCanvas = function () {
     var jc = this;
-    callHook$1(jc, 'beforeCreate');
+    callHook(jc, 'beforeCreate');
     var el = jc.el;
     var canvas;
 
@@ -201,12 +217,29 @@ function canvasMixin(JSCropper) {
     jc.bufferCanvas = bufferCanvas;
     document.body.appendChild(bufferCanvas);
   };
+
+  JSCropper.prototype._renderOffScreen = function () {
+    var jc = this;
+    var bufferCanvas = jc.bufferCanvas;
+    var canvas = jc.canvas;
+    var cropperWidth = jc.cropperWidth;
+    var cropperHeight = jc.cropperHeight;
+    var zoom = jc._zoom;
+    var ctx = canvas.getContext('2d');
+    var width = cropperWidth * zoom;
+    var height = cropperHeight * zoom;
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(bufferCanvas, 0, 0, width, height, 0, 0, width, height);
+  };
 }
 
 var toLowerCase$1 = String.prototype.toLowerCase;
+/* 
+ * 图片加载失败，抛出错误
+ */
 
 function loadFail() {
-  callHook$1(jc, 'imgLoaded');
+  callHook(jc, 'imgLoaded');
   throw new Error('Load image fail, please check your image');
 }
 /* 
@@ -225,13 +258,13 @@ function loadImage(jc) {
     return;
   }
 
-  callHook$1(jc, 'beforeImgLoaded');
+  callHook(jc, 'beforeImgLoaded');
 
   if (typeOf(img) === 'string') {
     var targetImg = new Image();
 
     targetImg.onload = function () {
-      jc._targetImg = targetImg;
+      jc._sourceImg = targetImg;
       jc._img = img;
     };
 
@@ -239,7 +272,7 @@ function loadImage(jc) {
     targetImg.src = img;
   } else if (typeOf(img) === 'object' && toLowerCase$1.call(img) === 'img' && img.nodeType === 1) {
     img.onload = function () {
-      jc._targetImg = img;
+      jc._sourceImg = img;
       jc._img = img;
     };
 
@@ -250,26 +283,17 @@ function loadImage(jc) {
 }
 
 function initImage(jc) {
-  var targetImg = jc._targetImg;
-  var originImgWidth = targetImg.width;
-  var originImgHeight = targetImg.height;
   var cropperWidth = jc.cropperWidth;
   var cropperHeight = jc.cropperHeight;
   var zoom = jc._zoom;
-  var width = cropperWidth * zoom;
-  var height = cropperHeight * zoom;
-  var imgWidth = originImgWidth * zoom;
-  var imgHeight = originImgHeight * zoom;
-  var radio = Math.max(imgWidth / cropperWidth, imgHeight / cropperHeight);
-  console.log(imgWidth / cropperWidth, imgHeight / cropperHeight);
-  imgWidth = imgWidth / radio;
-  imgHeight = imgHeight / radio;
-  var imgSource = document.createElement('canvas');
-  var ctx = imgSource.getContext('2d');
-  imgSource.width = width;
-  imgSource.height = height;
-  ctx.drawImage(targetImg, 0, 0, originImgWidth, originImgWidth, 0, 0, imgWidth, imgHeight);
-  document.body.appendChild(imgSource);
+  var jc_sourceImg = jc._sourceImg;
+  var width = jc_sourceImg.width;
+  var height = jc_sourceImg.height;
+  var ratio = Math.min(cropperWidth / width, cropperHeight / height);
+  Object.assign(jc, {
+    _imgWidth: width * ratio * zoom,
+    _imgHeight: height * ratio * zoom
+  });
 }
 /* 
  * 向画布中绘制背景图，并保存绘图数据
@@ -277,8 +301,114 @@ function initImage(jc) {
 
 
 function drawImage(jc) {
-  var targetImg = jc._targetImg;
-  console.log(targetImg.width, targetImg.height);
+  var bufferCanvas = jc.bufferCanvas;
+  var sourceImg = jc._sourceImg;
+  var cropperWidth = jc.cropperWidth;
+  var cropperHeight = jc.cropperHeight;
+  var imgWidth = jc._imgWidth;
+  var imgHeight = jc._imgHeight;
+  var zoom = jc._zoom;
+  var width = sourceImg.width;
+  var height = sourceImg.height;
+  var ctx = bufferCanvas.getContext('2d');
+  var dx = (cropperWidth * zoom - imgWidth) / 2;
+  var dy = (cropperHeight * zoom - imgHeight) / 2;
+  ctx.drawImage(sourceImg, 0, 0, width, height, dx, dy, imgWidth, imgHeight);
+}
+
+/* 
+ * 根据方向绘制矩形，默认顺时针方向
+ *
+ * @params {CanvasRenderingContext2D} ctx;2d画布绘图对象
+ * @params {Number} x;矩形起点x坐标
+ * @params {Number} y;矩形起点y坐标
+ * @params {Number} width;矩形宽度
+ * @params {Number} height;矩形高度
+ * @params {Boolean} counterClockWise;是否逆时针绘制
+ */
+function rect(ctx, x, y, width, height, counterClockWise) {
+  if (counterClockWise === void 0) counterClockWise = false;
+
+  if (!counterClockWise) {
+    //顺时针
+    ctx.rect(x, y, width, height);
+  } else {
+    //逆时针
+    ctx.moveTo(x, y);
+    ctx.lineTo(x, y + height);
+    ctx.lineTo(x + width, y + height);
+    ctx.lineTo(x + width, y);
+    ctx.lineTo(x, y);
+  }
+}
+
+/* 
+ * 重置裁剪框位置，在画布中间
+ */
+
+function resetPos(jc) {
+  var width = jc.width;
+  var height = jc.height;
+  var zoom = jc._zoom;
+  var cropperWidth = jc.cropperWidth;
+  var cropperHeight = jc.cropperHeight;
+  jc._x = (cropperWidth - width) * zoom / 2;
+  jc._y = (cropperHeight - height) * zoom / 2;
+}
+/* 
+ * 绘制裁剪框与画布之间的阴影
+ */
+
+
+function drawShadow(jc) {
+  var bufferCanvas = jc.bufferCanvas;
+  var cropperWidth = jc.cropperWidth;
+  var cropperHeight = jc.cropperHeight;
+  var width = jc.width;
+  var height = jc.height;
+  var x = jc._x;
+  var y = jc._y;
+  var zoom = jc._zoom;
+  var isDragging = jc.isDragging;
+  var ctx = bufferCanvas.getContext('2d');
+  ctx.save();
+  ctx.beginPath();
+  rect(ctx, 0, 0, cropperWidth * zoom, cropperHeight * zoom); //顺时针画外框
+
+  rect(ctx, x, y, width * zoom, height * zoom, true); //逆时针画内框
+
+  ctx.fillStyle = isDragging ? jc.selectBackColor : jc.inSelectBackColor;
+  ctx.fill(); //根据环绕原则，填充颜色
+
+  ctx.restore();
+}
+
+function drawCropGride(jc) {
+  var bufferCanvas = jc.bufferCanvas;
+  var cropperWidth = jc.cropperWidth;
+  var cropperHeight = jc.cropperHeight;
+  var width = jc.width;
+  var height = jc.height;
+  var x = jc._x;
+  var y = jc._y;
+  var zoom = jc._zoom;
+  var ctx = bufferCanvas.getContext('2d');
+}
+
+function drawCropBox(jc) {
+  var bufferCanvas = jc.bufferCanvas;
+  var x = jc._x;
+  var y = jc._y;
+
+  if (x === undefined || y === undefined) {
+    resetPos(jc);
+  }
+
+  var ctx = bufferCanvas.getContext('2d');
+  ctx.save();
+  drawShadow(jc);
+  drawCropGride(jc);
+  ctx.restore();
 }
 
 function drawMixin(JSCropper) {
@@ -301,31 +431,15 @@ function drawMixin(JSCropper) {
         jc._img = cropperImage = newVal;
         initImage(jc);
         drawImage(jc);
+        drawCropBox(jc);
+
+        jc._renderOffScreen();
       },
       get: function get() {
         return cropperImage;
       }
     });
     loadImage(jc);
-  };
-
-  JSCropper.prototype.update = function (options) {
-    var jc = this;
-    callHook(jc, 'beforeUpdate');
-
-    if (Object.keys(options) === 0) {
-      return;
-    }
-
-    Object.assign(jc, options);
-
-    jc._redraw();
-
-    callHook(jc, 'updated');
-  };
-
-  JSCropper.prototype.reset = function () {
-    callHook(this, 'beforeReset');
   };
 }
 

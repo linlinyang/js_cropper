@@ -1,5 +1,6 @@
 import { loadImage,initImage,drawImage } from './draws/imgUtil';
 import { getZoom } from './utils/tool';
+import { drawCropBox } from './draws/cropbox';
 
 function drawMixin(JSCropper){
 
@@ -19,6 +20,8 @@ function drawMixin(JSCropper){
                 jc._img = cropperImage = newVal;
                 initImage(jc);
                 drawImage(jc);
+                drawCropBox(jc);
+                jc._renderOffScreen();
             },
             get(){
                 return cropperImage
@@ -26,23 +29,6 @@ function drawMixin(JSCropper){
         });
         loadImage(jc);
     };
-
-
-    JSCropper.prototype.update = function(options){
-        const jc = this;
-        callHook(jc,'beforeUpdate');
-        if( Object.keys(options) === 0 ){
-            return ;
-        }
-        Object.assign(jc,options);
-        jc._redraw();
-        callHook(jc,'updated');
-    };
-
-    JSCropper.prototype.reset = function(){
-        callHook(this,'beforeReset');
-    };
-
 }
 
 export {

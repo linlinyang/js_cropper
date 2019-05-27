@@ -8,7 +8,6 @@ function initMixin(JSCropper){
 
         jc._originOpts = options;
         Object.assign( jc, {
-            maxSize: 2000,
             cropperWidth: 800,
             cropperHeight: 600,
             width: 300,
@@ -20,9 +19,7 @@ function initMixin(JSCropper){
             quality: 1,
             imgType: 'image/png',
             inSelectBackColor: 'rgba(0,0,0,0.6)',
-            selectBackColor: 'rgba(0,0,0,0.2)',
-            scalable: true,
-            scaleStep: 0.02
+            selectBackColor: 'rgba(0,0,0,0.2)'
         }, options);
         jc._uid = uid++;
         

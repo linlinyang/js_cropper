@@ -3,6 +3,9 @@ import { callHook } from '../lifeCircle';
 
 const toLowerCase = String.prototype.toLowerCase;
 
+/* 
+ * 图片加载失败，抛出错误
+ */
 function loadFail(){
     callHook(jc,'imgLoaded');
     throw new Error('Load image fail, please check your image');
@@ -24,14 +27,14 @@ function loadImage(jc){
     if( typeOf(img) === 'string' ){
         const targetImg = new Image();
         targetImg.onload = function(){
-            jc._targetImg = targetImg;
+            jc._sourceImg = targetImg;
             jc._img = img;
         };
         targetImg.onerror = loadFail;
         targetImg.src = img;
     }else if( typeOf(img) === 'object' && toLowerCase.call(img) === 'img' && img.nodeType === 1 ){
         img.onload = function(){
-            jc._targetImg = img;
+            jc._sourceImg = img;
             jc._img = img;
         }
         img.onerror = loadFail;
@@ -41,41 +44,45 @@ function loadImage(jc){
 }
 
 function initImage(jc){
-    const targetImg = jc._targetImg;
-    const { 
-        width: originImgWidth,
-        height: originImgHeight
-    } = targetImg;
     const {
         cropperWidth,
         cropperHeight,
-        _zoom: zoom
+        _zoom: zoom,
+        _sourceImg: {
+            width,
+            height
+        }
     } = jc;
-
-    const width = cropperWidth * zoom;
-    const height = cropperHeight * zoom;
-    let imgWidth = originImgWidth * zoom;
-    let imgHeight = originImgHeight * zoom;
-
-    const radio = Math.max(imgWidth / cropperWidth, imgHeight / cropperHeight);
-console.log(imgWidth / cropperWidth, imgHeight / cropperHeight);
-    imgWidth = imgWidth / radio;
-    imgHeight = imgHeight / radio;
-
-    const imgSource = document.createElement('canvas');
-    const ctx = imgSource.getContext('2d');
-    imgSource.width = width;
-    imgSource.height = height;
-    ctx.drawImage(targetImg,0,0,originImgWidth,originImgWidth,0,0,imgWidth,imgHeight);
-    document.body.appendChild(imgSource);
+    const ratio = Math.min(cropperWidth / width, cropperHeight / height);
+    
+    Object.assign(jc,{
+        _imgWidth: width * ratio * zoom,
+        _imgHeight: height * ratio * zoom
+    });
 }
 
 /* 
  * 向画布中绘制背景图，并保存绘图数据
  */
 function drawImage(jc){
-    const targetImg = jc._targetImg;
-    console.log(targetImg.width,targetImg.height);
+    const {
+        bufferCanvas,
+        _sourceImg: sourceImg,
+        cropperWidth,
+        cropperHeight,
+        _imgWidth: imgWidth,
+        _imgHeight: imgHeight,
+        _zoom: zoom
+    } = jc;
+    const {
+        width,
+        height
+    } = sourceImg;
+    const ctx = bufferCanvas.getContext('2d');
+    const dx = ( cropperWidth * zoom - imgWidth ) / 2;
+    const dy = ( cropperHeight * zoom - imgHeight ) / 2;
+    
+    ctx.drawImage(sourceImg,0,0,width,height,dx,dy,imgWidth,imgHeight);
 }
 
 

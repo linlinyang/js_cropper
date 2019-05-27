@@ -89,6 +89,23 @@ function canvasMixin(JSCropper){
 
         document.body.appendChild(bufferCanvas);
     };
+
+    JSCropper.prototype._renderOffScreen = function(){
+        const jc = this;
+        const {
+            bufferCanvas,
+            canvas,
+            cropperWidth,
+            cropperHeight,
+            _zoom: zoom
+        } = jc;
+        const ctx = canvas.getContext('2d');
+        const width = cropperWidth * zoom;
+        const height = cropperHeight * zoom;
+        
+        ctx.clearRect(0,0,width,height);
+        ctx.drawImage(bufferCanvas,0,0,width,height,0,0,width,height);
+    };
 }
 
 export {

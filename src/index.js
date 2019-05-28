@@ -3,6 +3,7 @@ import './polyfill/index';
 import { initMixin } from './init';
 import { lifyCircleMixin } from './lifeCircle';
 import { canvasMixin } from './canvas';
+import { eventMixin } from './eventMixin';
 import { drawMixin } from './draw';
 //import {initCropperBox} from './croperBox';
 
@@ -17,6 +18,7 @@ class JSCropper{
 initMixin(JSCropper);
 lifyCircleMixin(JSCropper);
 canvasMixin(JSCropper);
+eventMixin(JSCropper);
 drawMixin(JSCropper);
 
 JSCropper.version = '__VERSION__';

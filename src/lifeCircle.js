@@ -17,7 +17,10 @@ function lifyCircleMixin(JSCropper){
     };
 
     JSCropper.prototype.destroy = function(){
+        const jc = this;
         callHook(this,'beforeDestory');
+
+        jc.off();
     }
     
     JSCropper.prototype.reset = function(){

@@ -30,6 +30,10 @@ function canvasMixin(JSCropper){
         jc._imageSource = ctx.getImageData(0,0,width,height);
     };
 
+    /* 
+    * 如果用户传递进来的el是画布元素，则使用改画布元素，否则创建之
+    * 如果el是html对象，并非画布元素，则将创建画布元素添加到改对象中
+     */
     JSCropper.prototype._initCanvas = function(){
         const jc = this;
         
@@ -47,8 +51,24 @@ function canvasMixin(JSCropper){
             canvas = document.createElement('canvas');
             canvas.innerHTML = 'Your browser does not support canvas';
         }
-        
+
+        const wrapEl = typeOf( el ) === 'string' 
+            ?  document.querySelector(el)
+            : el || null;
+        if( wrapEl && typeOf( wrapEl ) === 'object' && wrapEl.nodeType === 1 ){
+            wrapEl.appendChild(canvas);
+        }
+        jc.canvas = canvas;
+    };
+
+    /* 
+    * 重置画布尺寸，设置画布的绘图表面大小和元素大小
+     */
+    JSCropper.prototype._resizeCanvas = function(){
+        const jc = this;
+
         const {
+            canvas,
             _zoom: zoom,
             cropperWidth: width,
             cropperHeight: height
@@ -57,9 +77,6 @@ function canvasMixin(JSCropper){
         resizeCanvas(canvas,width,height,zoom);
         canvas.style.width = width + 'px';
         canvas.style.height = height + 'px';
-
-        !canvas.parentNode && document.body.appendChild(canvas);
-        jc.canvas = canvas;
     };
 
     JSCropper.prototype._offscreenBuffering = function(){

@@ -32,6 +32,21 @@ function typeOf(any) {
   return map[type];
 }
 /* 
+ *计算两点之间的距离
+ *
+ * @params {Number} sx;起点x坐标
+ * @params {Number} sy;起点y坐标
+ * @params {Number} dx;终点x坐标
+ * @params {Number} dy;终点y坐标
+ * 
+ * @return {Number} 返回两点间直线距离
+ */
+
+
+function distance(sx, sy, dx, dy) {
+  return Math.sqrt(Math.pow(dx - sx, 2) + Math.pow(dy - sy, 2));
+}
+/* 
  * 根据设备像素比来设置画布缩放
  *
  * @params {CanvasRenderingContext2D} ctx;2d画布绘图对象
@@ -107,7 +122,9 @@ function lifyCircleMixin(JSCropper) {
   };
 
   JSCropper.prototype.destroy = function () {
+    var jc = this;
     callHook(this, 'beforeDestory');
+    jc.off();
   };
 
   JSCropper.prototype.reset = function () {
@@ -137,6 +154,8 @@ function initMixin(JSCropper) {
       selectBackColor: 'rgba(0,0,0,0.2)'
     }, options);
     jc._uid = uid++;
+
+    jc._initCanvas();
 
     jc._redraw();
 
@@ -169,6 +188,11 @@ function canvasMixin(JSCropper) {
     var height = jc.cropperHeight * jc._zoom;
     jc._imageSource = ctx.getImageData(0, 0, width, height);
   };
+  /* 
+  * 如果用户传递进来的el是画布元素，则使用改画布元素，否则创建之
+  * 如果el是html对象，并非画布元素，则将创建画布元素添加到改对象中
+   */
+
 
   JSCropper.prototype._initCanvas = function () {
     var jc = this;
@@ -187,14 +211,28 @@ function canvasMixin(JSCropper) {
       canvas.innerHTML = 'Your browser does not support canvas';
     }
 
+    var wrapEl = typeOf(el) === 'string' ? document.querySelector(el) : el || null;
+
+    if (wrapEl && typeOf(wrapEl) === 'object' && wrapEl.nodeType === 1) {
+      wrapEl.appendChild(canvas);
+    }
+
+    jc.canvas = canvas;
+  };
+  /* 
+  * 重置画布尺寸，设置画布的绘图表面大小和元素大小
+   */
+
+
+  JSCropper.prototype._resizeCanvas = function () {
+    var jc = this;
+    var canvas = jc.canvas;
     var zoom = jc._zoom;
     var width = jc.cropperWidth;
     var height = jc.cropperHeight;
     resizeCanvas(canvas, width, height, zoom);
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
-    !canvas.parentNode && document.body.appendChild(canvas);
-    jc.canvas = canvas;
   };
 
   JSCropper.prototype._offscreenBuffering = function () {
@@ -228,6 +266,51 @@ function canvasMixin(JSCropper) {
     var height = cropperHeight * zoom;
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(bufferCanvas, 0, 0, width, height, 0, 0, width, height);
+  };
+}
+
+function eventMixin(JSCropper) {
+  var cacheEvents = [];
+
+  JSCropper.prototype.on = function (type, handler, options) {
+    if (options === void 0) options = false;
+    var jc = this;
+    var canvas = jc.canvas;
+
+    if (type === undefined || handler === undefined) {
+      return;
+    }
+
+    canvas.addEventListener(type, handler, options);
+    catcheEvents.push({
+      type: type,
+      handler: handler,
+      options: options
+    });
+  };
+
+  JSCropper.prototype.off = function (type, handler, options) {
+    if (options === void 0) options = false;
+    var jc = this;
+    var canvas = jc.canvas;
+    var len = cacheEvents.length;
+    var rmIndexs = [];
+
+    while (len--) {
+      var caches = cacheEvents[len];
+      var cacheType = caches.type;
+      var cacheHandler = caches.handler;
+      var cacheOptions = caches.options;
+
+      if (type === undefined || handler === undefined && type === cacheType || options === undefined && type === cacheType && handler === cacheHandler || type === cacheType && handler === cacheHandler && options === cacheOptions) {
+        rmIndexs.push(len);
+        canvas.removeEventListener(cacheType, cacheHandler, cacheOptions);
+      }
+    }
+
+    rmIndexs.forEach(function (val) {
+      cacheEvents.splice(val, 1);
+    });
   };
 }
 
@@ -311,6 +394,7 @@ function drawImage(jc) {
   var ctx = bufferCanvas.getContext('2d');
   var dx = (cropperWidth * zoom - imgWidth) / 2;
   var dy = (cropperHeight * zoom - imgHeight) / 2;
+  ctx.clearRect(0, 0, cropperWidth * zoom, cropperHeight * zoom);
   ctx.drawImage(sourceImg, 0, 0, width, height, dx, dy, imgWidth, imgHeight);
 }
 
@@ -325,8 +409,49 @@ function drawImage(jc) {
  * 
  * 所以如果线宽是偶数时，线条的位置就要在整数的坐标上；反之，则要偏移半个像素来绘制所要达到的效果
  */
+
 function convertNum(coord, lineWidth) {
   return Math.floor(coord) + lineWidth % 2 / 2;
+}
+/* 
+ * 移动绘图路径起点
+ *
+ * @params {CanvasRenderingContext2D} ctx;2d画布绘图对象
+ * @params {Number} x;起点x坐标
+ * @params {Number} y;起点y坐标
+ * @params {Boolean} isSolid;是否需要转换为实线
+ */
+
+
+function moveTo(ctx, x, y, isSolid) {
+  if (isSolid === void 0) isSolid = false;
+  var lineWidth = ctx.lineWidth;
+
+  if (isSolid) {
+    ctx.moveTo(convertNum(x, lineWidth), convertNum(y, lineWidth));
+  } else {
+    ctx.moveTo(x, y);
+  }
+}
+/* 
+ * 绘制1px线段，canvas绘制1px线条bug，需要转换0.5px
+ *
+ * @params {CanvasRenderingContext2D} ctx;2d画布绘图对象
+ * @params {Number} x;线段终点x坐标
+ * @params {Number} y;线段终点y坐标
+ * @params {Boolean} isSolid;是否需要转换为实线
+ */
+
+
+function lineTo(ctx, x, y, isSolid) {
+  if (isSolid === void 0) isSolid = false;
+  var lineWidth = ctx.lineWidth;
+
+  if (isSolid) {
+    ctx.lineTo(convertNum(x, lineWidth), convertNum(y, lineWidth));
+  } else {
+    ctx.lineTo(x, y);
+  }
 }
 /* 
  * 根据方向绘制矩形，默认顺时针方向
@@ -345,7 +470,6 @@ function rect(ctx, x, y, width, height, counterClockWise, isSolid) {
   if (counterClockWise === void 0) counterClockWise = false;
   if (isSolid === void 0) isSolid = false;
   var lineWidth = ctx.lineWidth;
-  console.log(lineWidth);
   var xDistance = x + width;
   var yDistance = y + height;
 
@@ -362,14 +486,40 @@ function rect(ctx, x, y, width, height, counterClockWise, isSolid) {
     ctx.lineTo(xDistance, y);
     ctx.lineTo(xDistance, yDistance);
     ctx.lineTo(x, yDistance);
-    ctx.lineTo(x, y);
   } else {
     //逆时针
     ctx.moveTo(x, y);
     ctx.lineTo(x, yDistance);
     ctx.lineTo(xDistance, yDistance);
     ctx.lineTo(xDistance, y);
-    ctx.lineTo(x, y);
+  }
+
+  ctx.closePath();
+}
+/* 
+ * 虚线绘制，从起点绘制一条至终点的虚线
+ *
+ * @params {CanvasRenderingContext2D} ctx;2d画布绘图对象
+ * @params {Number} sx; 起点x坐标
+ * @params {Number} sy;起点y坐标
+ * @params {Number} dx;终点x坐标
+ * @params {Number} dy;终点y坐标
+ * @params {Number} step;虚线长度
+ */
+
+
+function dashLine(ctx, sx, sy, dx, dy, step, isSolid) {
+  if (step === void 0) step = 5;
+  if (isSolid === void 0) isSolid = false;
+  var length = distance(sx, sy, dx, dy);
+  var dotNums = Math.floor(length / step);
+  var xStep = (dx - sx) / dotNums;
+  var yStep = (dy - sy) / dotNums;
+
+  for (var i = 0; i < dotNums; i++) {
+    var x = sx + i * xStep;
+    var y = sy + i * yStep;
+    i & 1 ? lineTo(ctx, x, y, isSolid) : moveTo(ctx, x, y, isSolid);
   }
 }
 
@@ -416,29 +566,66 @@ function drawShadow(jc) {
 
 function drawCropGride(jc) {
   var bufferCanvas = jc.bufferCanvas;
-  var cropperWidth = jc.cropperWidth;
-  var cropperHeight = jc.cropperHeight;
   var width = jc.width;
   var height = jc.height;
   var x = jc._x;
   var y = jc._y;
   var zoom = jc._zoom;
   var edgeLineColor = jc.edgeLineColor;
+  var edgeLineWidth = jc.edgeLineWidth;
   var ctx = bufferCanvas.getContext('2d');
+  var w = width * zoom;
+  var h = height * zoom;
+  ctx.strokeStyle = edgeLineColor;
+  /* 
+  * 绘制裁框边线、中间虚线
+  */
+
   ctx.save();
-  ctx.lineWidth = 1; //ctx.strokeStyle = edgeLineColor * zoom;
+  ctx.lineWidth = Math.pow(zoom, 2);
+  rect(ctx, x, y, w, h, false, true);
+  dashLine(ctx, x, y + h / 3, x + w, y + h / 3, 5 * zoom, true); //水平第一条虚线
 
-  ctx.strokeStyle = 'red';
-  ctx.beginPath(); //rect( ctx, x, y, width * zoom, height * zoom, true, true);
+  dashLine(ctx, x, y + h * 2 / 3, x + w, y + h * 2 / 3, 5 * zoom, true); //水平第一条虚线
 
-  rect(ctx, 10, 10, 30, 30, false, true);
+  dashLine(ctx, x + w / 3, y, x + w / 3, y + h, 5 * zoom, true); //垂直第一条虚线
+
+  dashLine(ctx, x + w * 2 / 3, y, x + w * 2 / 3, y + h, 5 * zoom, true); //垂直第一条虚线
+
   ctx.stroke();
-  rect(ctx, 50.5, 50.5, 30, 30, false, true);
-  ctx.stroke();
-  ctx.lineWidth = 2;
-  rect(ctx, 100, 100, 30, 30, false, true);
-  ctx.stroke();
-  rect(ctx, 150.5, 150.5, 30, 30, false, true);
+  ctx.restore();
+  /* 绘制裁剪框四角边线线 */
+
+  ctx.save();
+  var edgeWidth = edgeLineWidth * zoom;
+  ctx.lineWidth = edgeWidth;
+  var outX = x - edgeWidth / 2;
+  var outY = y - edgeWidth / 2 + 1;
+  var distanceX = x + w + edgeWidth / 2;
+  var distanceY = y + h + edgeWidth / 2;
+  var edgeLen = Math.min(w, h) * 0.1;
+  ctx.beginPath();
+  moveTo(ctx, outX, outY, true); //左上水平边线
+
+  lineTo(ctx, outX + edgeLen, outY, true);
+  moveTo(ctx, distanceX - edgeLen, outY, true); //右上水平边线
+
+  lineTo(ctx, distanceX, outY, true);
+  lineTo(ctx, distanceX, outY + edgeLen, true); //右上垂直线
+
+  moveTo(ctx, distanceX, distanceY - edgeLen, true); //右下垂直线
+
+  lineTo(ctx, distanceX, distanceY, true);
+  lineTo(ctx, distanceX - edgeLen, distanceY, true); //右下水平线
+
+  moveTo(ctx, outX + edgeLen, distanceY, true); //左下水平线
+
+  lineTo(ctx, outX, distanceY, true);
+  lineTo(ctx, outX + 1, distanceY - edgeLen, true); //左下垂直线
+
+  moveTo(ctx, outX + 1, outY + edgeLen, true); //左上垂直线
+
+  lineTo(ctx, outX + 1, outY - edgeWidth / 2, true);
   ctx.stroke();
   ctx.restore();
 }
@@ -447,6 +634,7 @@ function drawCropBox(jc) {
   var bufferCanvas = jc.bufferCanvas;
   var x = jc._x;
   var y = jc._y;
+  var zoom = jc._zoom;
 
   if (x === undefined || y === undefined) {
     resetPos(jc);
@@ -466,7 +654,7 @@ function drawMixin(JSCropper) {
     var jc = this;
     jc._zoom = getZoom();
 
-    jc._initCanvas();
+    jc._resizeCanvas();
 
     jc._offscreenBuffering(jc);
 
@@ -488,6 +676,9 @@ function drawMixin(JSCropper) {
       }
     });
     loadImage(jc);
+    drawCropBox(jc);
+
+    jc._renderOffScreen();
   };
 }
 
@@ -500,6 +691,7 @@ var JSCropper = function JSCropper(options) {
 initMixin(JSCropper);
 lifyCircleMixin(JSCropper);
 canvasMixin(JSCropper);
+eventMixin(JSCropper);
 drawMixin(JSCropper);
 JSCropper.version = '1.0.0';
 

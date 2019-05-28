@@ -10,6 +10,8 @@
  * 所以如果线宽是偶数时，线条的位置就要在整数的坐标上；反之，则要偏移半个像素来绘制所要达到的效果
  */
 
+import { distance } from '../utils/tool';
+
 function convertNum(coord,lineWidth){
     return Math.floor( coord ) + ( lineWidth % 2 ) / 2;
 }
@@ -67,7 +69,6 @@ function lineTo(ctx,x,y,isSolid = false){
  */
 function rect(ctx,x,y,width,height,counterClockWise = false,isSolid = false){
     const lineWidth = ctx.lineWidth;
-    console.log(lineWidth);
     let xDistance = x + width;
     let yDistance = y + height;
     if(isSolid){
@@ -81,18 +82,41 @@ function rect(ctx,x,y,width,height,counterClockWise = false,isSolid = false){
         ctx.lineTo( xDistance, y );
         ctx.lineTo( xDistance, yDistance );
         ctx.lineTo( x, yDistance );
-        ctx.lineTo( x, y );
     }else{//逆时针
         ctx.moveTo( x, y );
         ctx.lineTo( x, yDistance );
         ctx.lineTo( xDistance, yDistance );
         ctx.lineTo( xDistance, y );
-        ctx.lineTo( x, y );
+    }
+    ctx.closePath();
+}
+
+/* 
+ * 虚线绘制，从起点绘制一条至终点的虚线
+ *
+ * @params {CanvasRenderingContext2D} ctx;2d画布绘图对象
+ * @params {Number} sx; 起点x坐标
+ * @params {Number} sy;起点y坐标
+ * @params {Number} dx;终点x坐标
+ * @params {Number} dy;终点y坐标
+ * @params {Number} step;虚线长度
+ */
+function dashLine(ctx,sx,sy,dx,dy,step = 5, isSolid = false){
+    const length = distance( sx, sy, dx, dy );
+    const dotNums = Math.floor( length / step );
+    const xStep = ( dx - sx ) / dotNums;
+    const yStep = ( dy - sy ) / dotNums;
+    for(let i = 0; i < dotNums; i++){
+        let x = sx + i * xStep;
+        let y = sy + i * yStep;
+        
+        (i & 1) ? lineTo(ctx,x,y,isSolid) : moveTo(ctx,x,y,isSolid);
     }
 }
 
 export {
     moveTo,
     lineTo,
-    rect
+    rect,
+    dashLine
 };

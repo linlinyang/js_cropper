@@ -81,7 +81,8 @@ function drawImage(jc){
     const ctx = bufferCanvas.getContext('2d');
     const dx = ( cropperWidth * zoom - imgWidth ) / 2;
     const dy = ( cropperHeight * zoom - imgHeight ) / 2;
-    
+
+    ctx.clearRect(0,0,cropperWidth * zoom,cropperHeight * zoom);
     ctx.drawImage(sourceImg,0,0,width,height,dx,dy,imgWidth,imgHeight);
 }
 

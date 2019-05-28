@@ -23,6 +23,7 @@ function initMixin(JSCropper){
         }, options);
         jc._uid = uid++;
         
+        jc._initCanvas();
         jc._redraw();
 
         callHook(jc,'created');

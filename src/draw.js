@@ -8,7 +8,7 @@ function drawMixin(JSCropper){
     JSCropper.prototype._redraw = function(){
         const jc = this;
         jc._zoom = getZoom();
-        jc._initCanvas();
+        jc._resizeCanvas();
         jc._offscreenBuffering(jc);
 
         Object.defineProperty( jc, '_img', {
@@ -28,6 +28,8 @@ function drawMixin(JSCropper){
             }
         });
         loadImage(jc);
+        drawCropBox(jc);
+        jc._renderOffScreen();
     };
 }
 

@@ -1,53 +1,18 @@
+import {up,move,down} from './events/handler';
+import { on } from './events/listeners';
+
 function eventMixin(JSCropper){
 
-    const cacheEvents = [];
-
-    JSCropper.prototype.on = function(type,handler,options = false){
+    JSCropper.prototype._bindDrag = function(){
         const jc = this;
-        const canvas = jc.canvas;
 
-        if(type === undefined || handler === undefined){
-            return ;
-        }
-
-        canvas.addEventListener( type, handler, options );
-        catcheEvents.push({
-            type,
-            handler,
-            options
-        });
+        on( window, 'mousedown', down(jc), false );
+        on( window, 'mousemove', move(jc), false );
+        on( window, 'mouseup', up(jc), false );
+        on( window, 'touchstart', down(jc), false );
+        on( window, 'touchmove', move(jc), false );
+        on( window, 'touchend', up(jc), false );
     };
-
-    JSCropper.prototype.off = function(type,handler,options = false){
-        const jc = this;
-        const canvas = jc.canvas;
-        let len = cacheEvents.length;
-
-        let rmIndexs = [];
-        while(len--){
-            let caches = cacheEvents[len];
-            let {
-                type: cacheType,
-                handler: cacheHandler,
-                options: cacheOptions
-            } = caches;
-
-            if(
-                type === undefined
-                || ( handler === undefined && type === cacheType )
-                || ( options === undefined && type === cacheType && handler === cacheHandler )
-                || ( type === cacheType && handler === cacheHandler && options === cacheOptions )
-            ){
-                rmIndexs.push(len);
-                canvas.removeEventListener( cacheType, cacheHandler, cacheOptions );
-            }
-        }
-
-        rmIndexs.forEach(( val ) => {
-            cacheEvents.splice( val, 1 );
-        });
-    }
-
 }
 
 export {

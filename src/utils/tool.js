@@ -65,8 +65,27 @@ function getZoom(){
     return devicePixelRadio / backingStore;
 }
 
+function window2canvas(canvas,x,y){
+    const {
+        width,
+        height
+    } = canvas;
+    const {
+        width: wWidth,
+        height: wHeight,
+        left: wX,
+        top: wY
+    } = canvas.getBoundingClientRect();
+
+    return {
+        x: (x - wX) * (width / wWidth),
+        y: (y - wY) * (width / wWidth)
+    };
+}
+
 export {
     typeOf,
     distance,
-    getZoom
+    getZoom,
+    window2canvas
 };

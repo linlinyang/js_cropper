@@ -5,11 +5,9 @@ import { drawCropBox } from './draws/cropbox';
 function drawMixin(JSCropper){
 
     let cropperImage = null;
-    JSCropper.prototype._redraw = function(){
+    
+    JSCropper.prototype._observeImg = function(){
         const jc = this;
-        jc._zoom = getZoom();
-        jc._resizeCanvas();
-        jc._offscreenBuffering(jc);
 
         Object.defineProperty( jc, '_img', {
             set(newVal){
@@ -27,6 +25,14 @@ function drawMixin(JSCropper){
                 return cropperImage
             }
         });
+    };
+
+    JSCropper.prototype._redraw = function(){
+        const jc = this;
+        jc._zoom = getZoom();
+        jc._resizeCanvas();
+        jc._offscreenBuffering(jc);
+        
         loadImage(jc);
         drawCropBox(jc);
         jc._renderOffScreen();

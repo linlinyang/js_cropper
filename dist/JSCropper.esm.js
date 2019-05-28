@@ -64,6 +64,20 @@ function getZoom() {
   return devicePixelRadio / backingStore;
 }
 
+function window2canvas(canvas, x, y) {
+  var width = canvas.width;
+  var height = canvas.height;
+  var ref = canvas.getBoundingClientRect();
+  var wWidth = ref.width;
+  var wHeight = ref.height;
+  var wX = ref.left;
+  var wY = ref.top;
+  return {
+    x: (x - wX) * (width / wWidth),
+    y: (y - wY) * (width / wWidth)
+  };
+}
+
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 /* 
  * 为Obejct方法定义assign方法，兼容ie，执行浅拷贝合并
@@ -157,7 +171,11 @@ function initMixin(JSCropper) {
 
     jc._initCanvas();
 
+    jc._observeImg();
+
     jc._redraw();
+
+    jc._bindDrag();
 
     callHook(jc, 'created');
   };
@@ -269,48 +287,94 @@ function canvasMixin(JSCropper) {
   };
 }
 
-function eventMixin(JSCropper) {
-  var cacheEvents = [];
+function on(el, type, handler, options) {
+  if (options === void 0) options = false;
+  el.addEventListener(type, handler, options);
+}
 
-  JSCropper.prototype.on = function (type, handler, options) {
-    if (options === void 0) options = false;
-    var jc = this;
+function getEvent(e) {
+  return e.changedTouches ? e.changedTouches[0] : e;
+}
+
+function inCropBox(jc, x, y) {
+  var canvas = jc.canvas;
+  var zoom = jc._zoom;
+  var width = jc.width;
+  var height = jc.height;
+  var cx = jc._x;
+  var cy = jc._y;
+
+  if (x > cx && x < cx + width * zoom && y > cy && y < cy + height * zoom) {
+    canvas.style.cursor = 'move';
+    return true;
+  } else {
+    canvas.style.cursor = 'default';
+    return false;
+  }
+}
+
+var isDragging = false;
+var disX = 0;
+var disY = 0;
+
+function down(jc) {
+  return function (e) {
+    var event = getEvent(e);
     var canvas = jc.canvas;
-
-    if (type === undefined || handler === undefined) {
-      return;
-    }
-
-    canvas.addEventListener(type, handler, options);
-    catcheEvents.push({
-      type: type,
-      handler: handler,
-      options: options
-    });
+    var cx = jc._x;
+    var cy = jc._y;
+    var ref = window2canvas(canvas, event.clientX, event.clientY);
+    var x = ref.x;
+    var y = ref.y;
+    isDragging = inCropBox(jc, x, y);
+    disX = x - cx;
+    disY = y - cy;
   };
+}
 
-  JSCropper.prototype.off = function (type, handler, options) {
-    if (options === void 0) options = false;
-    var jc = this;
+function move(jc) {
+  return function (e) {
+    var event = getEvent(e);
     var canvas = jc.canvas;
-    var len = cacheEvents.length;
-    var rmIndexs = [];
+    var cx = jc._x;
+    var cy = jc._y;
+    var width = jc.width;
+    var height = jc.height;
+    var cropperWidth = jc.cropperWidth;
+    var cropperHeight = jc.cropperHeight;
+    var edgeLineWidth = jc.edgeLineWidth;
+    var zoom = jc._zoom;
+    var ref = window2canvas(canvas, event.clientX, event.clientY);
+    var x = ref.x;
+    var y = ref.y;
+    var limitX = (cropperWidth - width - edgeLineWidth) * zoom;
+    var limitY = (cropperHeight - height - edgeLineWidth) * zoom;
+    inCropBox(jc, x, y);
 
-    while (len--) {
-      var caches = cacheEvents[len];
-      var cacheType = caches.type;
-      var cacheHandler = caches.handler;
-      var cacheOptions = caches.options;
+    if (isDragging) {
+      jc._x = Math.min(0, Math.max(limitX, (x - disX) * zoom));
+      jc._y = Math.min(0, Math.max(limitY, (y - disY) * zoom));
 
-      if (type === undefined || handler === undefined && type === cacheType || options === undefined && type === cacheType && handler === cacheHandler || type === cacheType && handler === cacheHandler && options === cacheOptions) {
-        rmIndexs.push(len);
-        canvas.removeEventListener(cacheType, cacheHandler, cacheOptions);
-      }
+      jc._redraw();
     }
+  };
+}
 
-    rmIndexs.forEach(function (val) {
-      cacheEvents.splice(val, 1);
-    });
+function up(jc) {
+  return function (e) {
+    isDragging = false;
+  };
+}
+
+function eventMixin(JSCropper) {
+  JSCropper.prototype._bindDrag = function () {
+    var jc = this;
+    on(window, 'mousedown', down(jc), false);
+    on(window, 'mousemove', move(jc), false);
+    on(window, 'mouseup', up(jc), false);
+    on(window, 'touchstart', down(jc), false);
+    on(window, 'touchmove', move(jc), false);
+    on(window, 'touchend', up(jc), false);
   };
 }
 
@@ -650,14 +714,8 @@ function drawCropBox(jc) {
 function drawMixin(JSCropper) {
   var cropperImage = null;
 
-  JSCropper.prototype._redraw = function () {
+  JSCropper.prototype._observeImg = function () {
     var jc = this;
-    jc._zoom = getZoom();
-
-    jc._resizeCanvas();
-
-    jc._offscreenBuffering(jc);
-
     Object.defineProperty(jc, '_img', {
       set: function set(newVal) {
         if (newVal === cropperImage) {
@@ -675,6 +733,16 @@ function drawMixin(JSCropper) {
         return cropperImage;
       }
     });
+  };
+
+  JSCropper.prototype._redraw = function () {
+    var jc = this;
+    jc._zoom = getZoom();
+
+    jc._resizeCanvas();
+
+    jc._offscreenBuffering(jc);
+
     loadImage(jc);
     drawCropBox(jc);
 

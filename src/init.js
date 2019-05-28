@@ -24,7 +24,9 @@ function initMixin(JSCropper){
         jc._uid = uid++;
         
         jc._initCanvas();
+        jc._observeImg();
         jc._redraw();
+        jc._bindDrag();
 
         callHook(jc,'created');
     };

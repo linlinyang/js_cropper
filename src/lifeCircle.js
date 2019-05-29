@@ -18,13 +18,15 @@ const defaultOptions = {
     quality: 1,
     imgType: 'image/png',
     inSelectBackColor: 'rgba(0,0,0,0.6)',
-    selectBackColor: 'rgba(0,0,0,0.4)'
+    selectBackColor: 'rgba(0,0,0,0.4)',
+    debug: false
 };
 
 function lifyCircleMixin(JSCropper){
 
     JSCropper.prototype.update = function(options){
         const jc = this;
+        jc.debug && console.log('更新参数，重绘裁剪框');
         Object.assign(jc,options);
         jc._redraw();
     };
@@ -37,10 +39,12 @@ function lifyCircleMixin(JSCropper){
         jc.canvas = jc.bufferCanvas = jc._sourceImg = jc._originOpts = null;
         callHook(jc,'destoryed');
         jc = null;
+        jc.debug && console.log('销毁裁剪框');
     }
     
     JSCropper.prototype.reset = function(){
         const jc = this;
+        jc.debug && console.log('重置裁剪框位置在画布中间');
         resetPos(jc);
         jc._redraw();
     };
@@ -68,8 +72,8 @@ function lifyCircleMixin(JSCropper){
             height
         } = sourceImg;
 
-        const tempCanvas = document.createElement('canvas');
-        const ctx = tempCanvas.getContext('2d');
+        let tempCanvas = document.createElement('canvas');
+        let ctx = tempCanvas.getContext('2d');
 
         tempCanvas.width = cropperWidth * zoom;
         tempCanvas.height = cropperHeight * zoom;
@@ -79,14 +83,15 @@ function lifyCircleMixin(JSCropper){
         ctx.drawImage(sourceImg,0,0,width,height,dx,dy,imgWidth,imgHeight);
 
         const resultCanvas = document.createElement('canvas');
-        const rstCtx = resultCanvas.getContext('2d');
+        let rstCtx = resultCanvas.getContext('2d');
         resultCanvas.width = cWidth * zoom;
         resultCanvas.height = cHeight * zoom;
         resultCanvas.style.width = cWidth + 'px';
         resultCanvas.style.height = cHeight + 'px';
         rstCtx.putImageData(ctx.getImageData(x,y,cWidth * zoom,cHeight * zoom),0,0);
 
-        tempCanvas = ctx = null;
+        tempCanvas = ctx = rstCtx = null;
+        jc.debug && console.warn('裁剪base64格式的图片，图片大小会受设备像素比影响，请注意设置图片尺寸');
         return resultCanvas.toDataURL(imgType,quality);
     };
     

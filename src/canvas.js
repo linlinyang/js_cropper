@@ -34,13 +34,16 @@ function canvasMixin(JSCropper){
 
         if( typeOf( el ) === 'string' ){
             canvas = document.querySelector(el);
+            jc.debug && canvas && console.log('使用选择器查找画布元素：',canvas);
         }else if( typeOf( el ) === 'object' && toLowerCase.call(el.nodeName) === 'canvas' && el.nodeType === 1 ){
             canvas = el;
+            jc.debug && canvas && console.log('使用提供的画布元素：',canvas);
         }
 
         if(!canvas){
             canvas = document.createElement('canvas');
             canvas.innerHTML = 'Your browser does not support canvas';
+            jc.debug && console.log('传入的不是画布元素，创建一个新的画布元素：',canvas);
         }
 
         const wrapEl = typeOf( el ) === 'string' 
@@ -48,6 +51,7 @@ function canvasMixin(JSCropper){
             : el || null;
         if( wrapEl && typeOf( wrapEl ) === 'object' && wrapEl.nodeType === 1 ){
             wrapEl.appendChild(canvas);
+            jc.debug && console.wran('将画布添加至el对应的元素,请注意设置样式');
         }
         jc.canvas = canvas;
     };
@@ -68,6 +72,7 @@ function canvasMixin(JSCropper){
         resizeCanvas(canvas,width,height,zoom);
         canvas.style.width = width + 'px';
         canvas.style.height = height + 'px';
+        jc.debug && console.log(`重置画布大小为: ${width * zoom}*${height * zoom};样式大小为：${width}*${height}px`);
     };
 
     /* 

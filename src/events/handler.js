@@ -79,6 +79,7 @@ function move(jc){
             jc._x = Math.max( 0, Math.min( limitX,  x - disX ) );
             jc._y = Math.max( 0, Math.min( limitY, y - disY ) );
             jc._redraw();
+            jc.debug && console.log(`拖动裁剪框：(X: ${jc._x}, Y: ${jc._y})`);
         }
     };
 }

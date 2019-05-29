@@ -79,7 +79,7 @@ function window2canvas(canvas,x,y){
 
     return {
         x: (x - wX) * (width / wWidth),
-        y: (y - wY) * (width / wWidth)
+        y: (y - wY) * (height / wHeight)
     };
 }
 

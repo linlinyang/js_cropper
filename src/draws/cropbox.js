@@ -124,8 +124,7 @@ function drawCropBox(jc){
     const {
         bufferCanvas,
         _x: x,
-        _y: y,
-        _zoom: zoom
+        _y: y
     } = jc;
     if(x === undefined || y === undefined){
         resetPos(jc);

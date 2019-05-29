@@ -1,8 +1,11 @@
 {
-  "name": "js_cropper",
+  "name": "@yanglinlin/js_cropper",
   "version": "1.0.0",
   "description": "use html5 canvas to cropper imgage and compress it",
-  "main": "index.js",
+  "main": "dist/JSCropper.min.js",
+  "module": "dist/JSCropper.esm.js",
+  "unpkg": "dist/JSCropper.js",
+  "jsdelivr": "dist/JSCropper.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c build/build.js",
@@ -12,7 +15,7 @@
     "type": "git",
     "url": "git+https://github.com/linlinyang/js_cropper.git"
   },
-  "keywords": [],
+  "keywords": ["canvas","cropper","compress"],
   "author": "Yang Lin",
   "license": "ISC",
   "devDependencies": {

@@ -21,15 +21,6 @@ function resizeCanvas(canvas,width,height,zoom = 1){
 }
 
 function canvasMixin(JSCropper){
-    JSCropper.prototype._restore = function(){
-        const jc = this;
-        const ctx = jc.ctx;
-        const width = jc.cropperWidth * jc._zoom;
-        const height = jc.cropperHeight * jc._zoom;
-
-        jc._imageSource = ctx.getImageData(0,0,width,height);
-    };
-
     /* 
     * 如果用户传递进来的el是画布元素，则使用改画布元素，否则创建之
     * 如果el是html对象，并非画布元素，则将创建画布元素添加到改对象中
@@ -79,10 +70,13 @@ function canvasMixin(JSCropper){
         canvas.style.height = height + 'px';
     };
 
+    /* 
+    * 创建离屏画布并初始化
+     */
     JSCropper.prototype._offscreenBuffering = function(){
         const jc = this;
 
-        const bufferCanvas = document.createElement('canvas');
+        const bufferCanvas = jc.bufferCanvas || document.createElement('canvas');
         const bufferCtx = bufferCanvas.getContext('2d');
         const {
             _zoom: zoom,
@@ -92,21 +86,22 @@ function canvasMixin(JSCropper){
         const {
             zoomWidth,
             zoomHeight
-        } = resizeCanvas(bufferCanvas,width,height,zoom);
+        } = resizeCanvas(bufferCanvas,width,height,zoom);//重置尺寸
 
         bufferCtx.clearRect(0,0,zoomWidth,zoomHeight);
         bufferCtx.save();
         
         bufferCtx.fillStyle = jc.shadowColor;
-        bufferCtx.fillRect(0,0,zoomWidth,zoomHeight);
+        bufferCtx.fillRect(0,0,zoomWidth,zoomHeight);//设置默认背景
 
         bufferCtx.restore();
 
-        jc.bufferCanvas = bufferCanvas;
-
-        document.body.appendChild(bufferCanvas);
+        !jc.bufferCanvas && (jc.bufferCanvas = bufferCanvas);
     };
 
+    /* 
+    * 渲染离屏画布至裁剪画布
+     */
     JSCropper.prototype._renderOffScreen = function(){
         const jc = this;
         const {

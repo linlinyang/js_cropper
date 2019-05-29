@@ -1,5 +1,5 @@
 /* /src/init.js */
-import { callHook } from './lifeCircle';
+import { callHook,defaultOptions } from './lifeCircle';
 
 let uid = 1;
 function initMixin(JSCropper){
@@ -7,20 +7,7 @@ function initMixin(JSCropper){
         const jc = this;
 
         jc._originOpts = options;
-        Object.assign( jc, {
-            cropperWidth: 800,
-            cropperHeight: 600,
-            width: 300,
-            height: 300,
-            shadowColor: 'rgba(0,0,0,0.7)',
-            edgeLineColor: '#fff',
-            edgeLineWidth: 3,
-            dashLineColor: 'rgba(255,255,255,0.8)',
-            quality: 1,
-            imgType: 'image/png',
-            inSelectBackColor: 'rgba(0,0,0,0.6)',
-            selectBackColor: 'rgba(0,0,0,0.2)'
-        }, options);
+        Object.assign( jc, defaultOptions, options);
         jc._uid = uid++;
         
         jc._initCanvas();

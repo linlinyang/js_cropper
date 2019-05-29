@@ -11,9 +11,6 @@ function on(el,type,handler,options = false){
 };
 
 function off(el,type,handler,options = false){
-    if(!el){
-        return ;
-    }
     let len = cacheEvents.length;
 
     let rmIndexs = [];
@@ -25,18 +22,15 @@ function off(el,type,handler,options = false){
             options: cacheOptions
         } = cacheEvents[len];
 
-        if(cacheEl !== el){
-            continue;
-        }
-
         if(
-            type === undefined
-            || ( handler === undefined && type === cacheType )
-            || ( options === undefined && type === cacheType && handler === cacheHandler )
-            || ( type === cacheType && handler === cacheHandler && options === cacheOptions )
+            !el
+            || ( el === cacheEl && type === undefined )
+            || ( handler === undefined && type === cacheType && el === cacheEl )
+            || ( options === undefined && type === cacheType && handler === cacheHandler && el === cacheEl )
+            || ( type === cacheType && handler === cacheHandler && options === cacheOptions && el === cacheEl )
         ){
             rmIndexs.push(len);
-            canvas.removeEventListener( cacheType, cacheHandler, cacheOptions );
+            cacheEl.removeEventListener( cacheType, cacheHandler, cacheOptions );
         }
     }
 

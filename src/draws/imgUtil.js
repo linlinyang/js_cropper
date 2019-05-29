@@ -19,7 +19,7 @@ function loadFail(){
  * 其他类型抛出错误
  */
 function loadImage(jc){
-    const img = jc.img || jc.image;
+    const img = jc.img;
     if(!img || img === jc._img){
         return ;
     }
@@ -29,6 +29,7 @@ function loadImage(jc){
         targetImg.onload = function(){
             jc._sourceImg = targetImg;
             jc._img = img;
+            callHook(jc,'imgLoaded');
         };
         targetImg.onerror = loadFail;
         targetImg.src = img;
@@ -36,6 +37,7 @@ function loadImage(jc){
         img.onload = function(){
             jc._sourceImg = img;
             jc._img = img;
+            callHook(jc,'imgLoaded');
         }
         img.onerror = loadFail;
     }else{
@@ -43,7 +45,13 @@ function loadImage(jc){
     }
 }
 
+/* 
+ * 初始化图片大小，等比缩放至画布大小
+ */
 function initImage(jc){
+    if(!jc._sourceImg){
+        return ;
+    }
     const {
         cropperWidth,
         cropperHeight,
@@ -65,6 +73,10 @@ function initImage(jc){
  * 向画布中绘制背景图，并保存绘图数据
  */
 function drawImage(jc){
+    if(!jc._sourceImg){
+        return ;
+    }
+    initImage(jc);
     const {
         bufferCanvas,
         _sourceImg: sourceImg,
@@ -89,6 +101,5 @@ function drawImage(jc){
 
 export {
     loadImage,
-    initImage,
     drawImage
 };

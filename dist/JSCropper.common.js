@@ -116,352 +116,44 @@ if (typeOf(Object.assign) !== 'function') {
   });
 }
 
-function callHook(jc, hook) {
-  var handler = jc[hook];
-  typeof handler === 'function' && handler.call(jc);
-}
-
-function lifyCircleMixin(JSCropper) {
-  JSCropper.prototype.update = function (options) {
-    var jc = this;
-    callHook(jc, 'beforeUpdate');
-
-    if (Object.keys(options) === 0) {
-      return;
-    }
-
-    Object.assign(jc, options);
-
-    jc._redraw();
-
-    callHook(jc, 'updated');
-  };
-
-  JSCropper.prototype.destroy = function () {
-    var jc = this;
-    callHook(this, 'beforeDestory');
-    jc.off();
-  };
-
-  JSCropper.prototype.reset = function () {
-    callHook(this, 'beforeReset');
-  };
-}
-
-/* /src/init.js */
-var uid = 1;
-
-function initMixin(JSCropper) {
-  JSCropper.prototype._init = function (options) {
-    var jc = this;
-    jc._originOpts = options;
-    Object.assign(jc, {
-      cropperWidth: 800,
-      cropperHeight: 600,
-      width: 300,
-      height: 300,
-      shadowColor: 'rgba(0,0,0,0.7)',
-      edgeLineColor: '#fff',
-      edgeLineWidth: 3,
-      dashLineColor: 'rgba(255,255,255,0.8)',
-      quality: 1,
-      imgType: 'image/png',
-      inSelectBackColor: 'rgba(0,0,0,0.6)',
-      selectBackColor: 'rgba(0,0,0,0.2)'
-    }, options);
-    jc._uid = uid++;
-
-    jc._initCanvas();
-
-    jc._observeImg();
-
-    jc._redraw();
-
-    jc._bindDrag();
-
-    callHook(jc, 'created');
-  };
-}
-
-function resizeCanvas(canvas, width, height, zoom) {
-  if (zoom === void 0) zoom = 1;
-  var ctx = canvas.getContext('2d');
-  var zoomWidth = width * zoom;
-  var zoomHeight = height * zoom;
-  canvas.width = zoomWidth;
-  canvas.height = zoomHeight;
-  ctx.mozImageSmoothingEnabled = false;
-  ctx.webkitImageSmoothingEnabled = false;
-  ctx.msImageSmoothingEnabled = false;
-  ctx.imageSmoothingEnabled = false;
-  return {
-    zoomWidth: zoomWidth,
-    zoomHeight: zoomHeight
-  };
-}
-
-function canvasMixin(JSCropper) {
-  JSCropper.prototype._restore = function () {
-    var jc = this;
-    var ctx = jc.ctx;
-    var width = jc.cropperWidth * jc._zoom;
-    var height = jc.cropperHeight * jc._zoom;
-    jc._imageSource = ctx.getImageData(0, 0, width, height);
-  };
-  /* 
-  * 如果用户传递进来的el是画布元素，则使用改画布元素，否则创建之
-  * 如果el是html对象，并非画布元素，则将创建画布元素添加到改对象中
-   */
-
-
-  JSCropper.prototype._initCanvas = function () {
-    var jc = this;
-    callHook(jc, 'beforeCreate');
-    var el = jc.el;
-    var canvas;
-
-    if (typeOf(el) === 'string') {
-      canvas = document.querySelector(el);
-    } else if (typeOf(el) === 'object' && toLowerCase.call(el.nodeName) === 'canvas' && el.nodeType === 1) {
-      canvas = el;
-    }
-
-    if (!canvas) {
-      canvas = document.createElement('canvas');
-      canvas.innerHTML = 'Your browser does not support canvas';
-    }
-
-    var wrapEl = typeOf(el) === 'string' ? document.querySelector(el) : el || null;
-
-    if (wrapEl && typeOf(wrapEl) === 'object' && wrapEl.nodeType === 1) {
-      wrapEl.appendChild(canvas);
-    }
-
-    jc.canvas = canvas;
-  };
-  /* 
-  * 重置画布尺寸，设置画布的绘图表面大小和元素大小
-   */
-
-
-  JSCropper.prototype._resizeCanvas = function () {
-    var jc = this;
-    var canvas = jc.canvas;
-    var zoom = jc._zoom;
-    var width = jc.cropperWidth;
-    var height = jc.cropperHeight;
-    resizeCanvas(canvas, width, height, zoom);
-    canvas.style.width = width + 'px';
-    canvas.style.height = height + 'px';
-  };
-
-  JSCropper.prototype._offscreenBuffering = function () {
-    var jc = this;
-    var bufferCanvas = document.createElement('canvas');
-    var bufferCtx = bufferCanvas.getContext('2d');
-    var zoom = jc._zoom;
-    var width = jc.cropperWidth;
-    var height = jc.cropperHeight;
-    var ref = resizeCanvas(bufferCanvas, width, height, zoom);
-    var zoomWidth = ref.zoomWidth;
-    var zoomHeight = ref.zoomHeight;
-    bufferCtx.clearRect(0, 0, zoomWidth, zoomHeight);
-    bufferCtx.save();
-    bufferCtx.fillStyle = jc.shadowColor;
-    bufferCtx.fillRect(0, 0, zoomWidth, zoomHeight);
-    bufferCtx.restore();
-    jc.bufferCanvas = bufferCanvas;
-    document.body.appendChild(bufferCanvas);
-  };
-
-  JSCropper.prototype._renderOffScreen = function () {
-    var jc = this;
-    var bufferCanvas = jc.bufferCanvas;
-    var canvas = jc.canvas;
-    var cropperWidth = jc.cropperWidth;
-    var cropperHeight = jc.cropperHeight;
-    var zoom = jc._zoom;
-    var ctx = canvas.getContext('2d');
-    var width = cropperWidth * zoom;
-    var height = cropperHeight * zoom;
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(bufferCanvas, 0, 0, width, height, 0, 0, width, height);
-  };
-}
+var cacheEvents = [];
 
 function on(el, type, handler, options) {
   if (options === void 0) options = false;
   el.addEventListener(type, handler, options);
+  cacheEvents.push({
+    el: el,
+    type: type,
+    handler: handler,
+    options: options
+  });
+}
+
+function off(el, type, handler, options) {
+  if (options === void 0) options = false;
+  var len = cacheEvents.length;
+  var rmIndexs = [];
+
+  while (len--) {
+    var ref = cacheEvents[len];
+    var cacheEl = ref.el;
+    var cacheType = ref.type;
+    var cacheHandler = ref.handler;
+    var cacheOptions = ref.options;
+
+    if (!el || el === cacheEl && type === undefined || handler === undefined && type === cacheType && el === cacheEl || options === undefined && type === cacheType && handler === cacheHandler && el === cacheEl || type === cacheType && handler === cacheHandler && options === cacheOptions && el === cacheEl) {
+      rmIndexs.push(len);
+      cacheEl.removeEventListener(cacheType, cacheHandler, cacheOptions);
+    }
+  }
+
+  rmIndexs.forEach(function (val) {
+    cacheEvents.splice(val, 1);
+  });
 }
 
 function getEvent(e) {
   return e.changedTouches ? e.changedTouches[0] : e;
-}
-
-function inCropBox(jc, x, y) {
-  var canvas = jc.canvas;
-  var zoom = jc._zoom;
-  var width = jc.width;
-  var height = jc.height;
-  var cx = jc._x;
-  var cy = jc._y;
-
-  if (x > cx && x < cx + width * zoom && y > cy && y < cy + height * zoom) {
-    canvas.style.cursor = 'move';
-    return true;
-  } else {
-    canvas.style.cursor = 'default';
-    return false;
-  }
-}
-
-var isDragging = false;
-var disX = 0;
-var disY = 0;
-
-function down(jc) {
-  return function (e) {
-    var event = getEvent(e);
-    var canvas = jc.canvas;
-    var cx = jc._x;
-    var cy = jc._y;
-    var ref = window2canvas(canvas, event.clientX, event.clientY);
-    var x = ref.x;
-    var y = ref.y;
-    isDragging = inCropBox(jc, x, y);
-    disX = x - cx;
-    disY = y - cy;
-  };
-}
-
-function move(jc) {
-  return function (e) {
-    var event = getEvent(e);
-    var canvas = jc.canvas;
-    var cx = jc._x;
-    var cy = jc._y;
-    var width = jc.width;
-    var height = jc.height;
-    var cropperWidth = jc.cropperWidth;
-    var cropperHeight = jc.cropperHeight;
-    var edgeLineWidth = jc.edgeLineWidth;
-    var zoom = jc._zoom;
-    var ref = window2canvas(canvas, event.clientX, event.clientY);
-    var x = ref.x;
-    var y = ref.y;
-    var limitX = (cropperWidth - width - edgeLineWidth) * zoom;
-    var limitY = (cropperHeight - height - edgeLineWidth) * zoom;
-    inCropBox(jc, x, y);
-
-    if (isDragging) {
-      jc._x = Math.min(0, Math.max(limitX, (x - disX) * zoom));
-      jc._y = Math.min(0, Math.max(limitY, (y - disY) * zoom));
-
-      jc._redraw();
-    }
-  };
-}
-
-function up(jc) {
-  return function (e) {
-    isDragging = false;
-  };
-}
-
-function eventMixin(JSCropper) {
-  JSCropper.prototype._bindDrag = function () {
-    var jc = this;
-    on(window, 'mousedown', down(jc), false);
-    on(window, 'mousemove', move(jc), false);
-    on(window, 'mouseup', up(jc), false);
-    on(window, 'touchstart', down(jc), false);
-    on(window, 'touchmove', move(jc), false);
-    on(window, 'touchend', up(jc), false);
-  };
-}
-
-var toLowerCase$1 = String.prototype.toLowerCase;
-/* 
- * 图片加载失败，抛出错误
- */
-
-function loadFail() {
-  callHook(jc, 'imgLoaded');
-  throw new Error('Load image fail, please check your image');
-}
-/* 
- * 根据配置加载图片
- * 
- * 图片为String类型则作为图片路径处理
- * 图片是Image对象，则直接使用
- * 其他类型抛出错误
- */
-
-
-function loadImage(jc) {
-  var img = jc.img || jc.image;
-
-  if (!img || img === jc._img) {
-    return;
-  }
-
-  callHook(jc, 'beforeImgLoaded');
-
-  if (typeOf(img) === 'string') {
-    var targetImg = new Image();
-
-    targetImg.onload = function () {
-      jc._sourceImg = targetImg;
-      jc._img = img;
-    };
-
-    targetImg.onerror = loadFail;
-    targetImg.src = img;
-  } else if (typeOf(img) === 'object' && toLowerCase$1.call(img) === 'img' && img.nodeType === 1) {
-    img.onload = function () {
-      jc._sourceImg = img;
-      jc._img = img;
-    };
-
-    img.onerror = loadFail;
-  } else {
-    loadFail();
-  }
-}
-
-function initImage(jc) {
-  var cropperWidth = jc.cropperWidth;
-  var cropperHeight = jc.cropperHeight;
-  var zoom = jc._zoom;
-  var jc_sourceImg = jc._sourceImg;
-  var width = jc_sourceImg.width;
-  var height = jc_sourceImg.height;
-  var ratio = Math.min(cropperWidth / width, cropperHeight / height);
-  Object.assign(jc, {
-    _imgWidth: width * ratio * zoom,
-    _imgHeight: height * ratio * zoom
-  });
-}
-/* 
- * 向画布中绘制背景图，并保存绘图数据
- */
-
-
-function drawImage(jc) {
-  var bufferCanvas = jc.bufferCanvas;
-  var sourceImg = jc._sourceImg;
-  var cropperWidth = jc.cropperWidth;
-  var cropperHeight = jc.cropperHeight;
-  var imgWidth = jc._imgWidth;
-  var imgHeight = jc._imgHeight;
-  var zoom = jc._zoom;
-  var width = sourceImg.width;
-  var height = sourceImg.height;
-  var ctx = bufferCanvas.getContext('2d');
-  var dx = (cropperWidth * zoom - imgWidth) / 2;
-  var dy = (cropperHeight * zoom - imgHeight) / 2;
-  ctx.clearRect(0, 0, cropperWidth * zoom, cropperHeight * zoom);
-  ctx.drawImage(sourceImg, 0, 0, width, height, dx, dy, imgWidth, imgHeight);
 }
 
 /* 
@@ -625,10 +317,14 @@ function drawShadow(jc) {
   rect(ctx, x, y, width * zoom, height * zoom, true); //逆时针画内框
 
   ctx.fillStyle = isDragging ? jc.selectBackColor : jc.inSelectBackColor;
-  ctx.fill(); //根据环绕原则，填充颜色
+  ctx.fill(); //根据环绕原则，填充镂空阴影颜色
 
   ctx.restore();
 }
+/* 
+* 绘制裁剪框表格，裁剪框边框以及中间虚线
+ */
+
 
 function drawCropGride(jc) {
   var bufferCanvas = jc.bufferCanvas;
@@ -695,6 +391,10 @@ function drawCropGride(jc) {
   ctx.stroke();
   ctx.restore();
 }
+/* 
+* 绘制裁剪框
+ */
+
 
 function drawCropBox(jc) {
   var bufferCanvas = jc.bufferCanvas;
@@ -713,8 +413,419 @@ function drawCropBox(jc) {
   ctx.restore();
 }
 
+function callHook(jc, hook) {
+  var handler = jc[hook];
+  typeof handler === 'function' && handler.call(jc);
+}
+
+var defaultOptions = {
+  cropperWidth: 800,
+  cropperHeight: 600,
+  width: 300,
+  height: 300,
+  shadowColor: 'rgba(0,0,0,0.7)',
+  edgeLineColor: '#fff',
+  edgeLineWidth: 3,
+  dashLineColor: 'rgba(255,255,255,0.8)',
+  quality: 1,
+  imgType: 'image/png',
+  inSelectBackColor: 'rgba(0,0,0,0.6)',
+  selectBackColor: 'rgba(0,0,0,0.4)'
+};
+
+function lifyCircleMixin(JSCropper) {
+  JSCropper.prototype.update = function (options) {
+    var jc = this;
+    Object.assign(jc, options);
+
+    jc._redraw();
+  };
+
+  JSCropper.prototype.destroy = function () {
+    var jc = this;
+    callHook(jc, 'beforeDestory');
+    off();
+    jc.canvas = jc.bufferCanvas = jc._sourceImg = jc._originOpts = null;
+    callHook(jc, 'destoryed');
+    jc = null;
+  };
+
+  JSCropper.prototype.reset = function () {
+    var jc = this;
+    resetPos(jc);
+
+    jc._redraw();
+  };
+
+  JSCropper.prototype.cut = function () {
+    var jc = this;
+    var sourceImg = jc._sourceImg;
+    var imgWidth = jc._imgWidth;
+    var imgHeight = jc._imgHeight;
+    var zoom = jc._zoom;
+    var cropperWidth = jc.cropperWidth;
+    var cropperHeight = jc.cropperHeight;
+    var cWidth = jc.width;
+    var cHeight = jc.height;
+    var x = jc._x;
+    var y = jc._y;
+    var imgType = jc.imgType;
+    var quality = jc.quality;
+    var dx = (cropperWidth * zoom - imgWidth) / 2;
+    var dy = (cropperHeight * zoom - imgHeight) / 2;
+    var width = sourceImg.width;
+    var height = sourceImg.height;
+    var tempCanvas = document.createElement('canvas');
+    var ctx = tempCanvas.getContext('2d');
+    tempCanvas.width = cropperWidth * zoom;
+    tempCanvas.height = cropperHeight * zoom;
+    tempCanvas.style.width = cropperWidth + 'px';
+    tempCanvas.style.height = cropperHeight + 'px';
+    ctx.drawImage(sourceImg, 0, 0, width, height, dx, dy, imgWidth, imgHeight);
+    var resultCanvas = document.createElement('canvas');
+    var rstCtx = resultCanvas.getContext('2d');
+    resultCanvas.width = cWidth * zoom;
+    resultCanvas.height = cHeight * zoom;
+    resultCanvas.style.width = cWidth + 'px';
+    resultCanvas.style.height = cHeight + 'px';
+    rstCtx.putImageData(ctx.getImageData(x, y, cWidth * zoom, cHeight * zoom), 0, 0);
+    return resultCanvas.toDataURL(imgType, quality);
+  };
+}
+
+/* /src/init.js */
+var uid = 1;
+
+function initMixin(JSCropper) {
+  JSCropper.prototype._init = function (options) {
+    var jc = this;
+    jc._originOpts = options;
+    Object.assign(jc, defaultOptions, options);
+    jc._uid = uid++;
+
+    jc._initCanvas();
+
+    jc._observeImg();
+
+    jc._redraw();
+
+    jc._bindDrag();
+
+    callHook(jc, 'created');
+  };
+}
+
+function resizeCanvas(canvas, width, height, zoom) {
+  if (zoom === void 0) zoom = 1;
+  var ctx = canvas.getContext('2d');
+  var zoomWidth = width * zoom;
+  var zoomHeight = height * zoom;
+  canvas.width = zoomWidth;
+  canvas.height = zoomHeight;
+  ctx.mozImageSmoothingEnabled = false;
+  ctx.webkitImageSmoothingEnabled = false;
+  ctx.msImageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = false;
+  return {
+    zoomWidth: zoomWidth,
+    zoomHeight: zoomHeight
+  };
+}
+
+function canvasMixin(JSCropper) {
+  /* 
+  * 如果用户传递进来的el是画布元素，则使用改画布元素，否则创建之
+  * 如果el是html对象，并非画布元素，则将创建画布元素添加到改对象中
+   */
+  JSCropper.prototype._initCanvas = function () {
+    var jc = this;
+    callHook(jc, 'beforeCreate');
+    var el = jc.el;
+    var canvas;
+
+    if (typeOf(el) === 'string') {
+      canvas = document.querySelector(el);
+    } else if (typeOf(el) === 'object' && toLowerCase.call(el.nodeName) === 'canvas' && el.nodeType === 1) {
+      canvas = el;
+    }
+
+    if (!canvas) {
+      canvas = document.createElement('canvas');
+      canvas.innerHTML = 'Your browser does not support canvas';
+    }
+
+    var wrapEl = typeOf(el) === 'string' ? document.querySelector(el) : el || null;
+
+    if (wrapEl && typeOf(wrapEl) === 'object' && wrapEl.nodeType === 1) {
+      wrapEl.appendChild(canvas);
+    }
+
+    jc.canvas = canvas;
+  };
+  /* 
+  * 重置画布尺寸，设置画布的绘图表面大小和元素大小
+   */
+
+
+  JSCropper.prototype._resizeCanvas = function () {
+    var jc = this;
+    var canvas = jc.canvas;
+    var zoom = jc._zoom;
+    var width = jc.cropperWidth;
+    var height = jc.cropperHeight;
+    resizeCanvas(canvas, width, height, zoom);
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+  };
+  /* 
+  * 创建离屏画布并初始化
+   */
+
+
+  JSCropper.prototype._offscreenBuffering = function () {
+    var jc = this;
+    var bufferCanvas = jc.bufferCanvas || document.createElement('canvas');
+    var bufferCtx = bufferCanvas.getContext('2d');
+    var zoom = jc._zoom;
+    var width = jc.cropperWidth;
+    var height = jc.cropperHeight;
+    var ref = resizeCanvas(bufferCanvas, width, height, zoom);
+    var zoomWidth = ref.zoomWidth;
+    var zoomHeight = ref.zoomHeight; //重置尺寸
+
+    bufferCtx.clearRect(0, 0, zoomWidth, zoomHeight);
+    bufferCtx.save();
+    bufferCtx.fillStyle = jc.shadowColor;
+    bufferCtx.fillRect(0, 0, zoomWidth, zoomHeight); //设置默认背景
+
+    bufferCtx.restore();
+    !jc.bufferCanvas && (jc.bufferCanvas = bufferCanvas);
+  };
+  /* 
+  * 渲染离屏画布至裁剪画布
+   */
+
+
+  JSCropper.prototype._renderOffScreen = function () {
+    var jc = this;
+    var bufferCanvas = jc.bufferCanvas;
+    var canvas = jc.canvas;
+    var cropperWidth = jc.cropperWidth;
+    var cropperHeight = jc.cropperHeight;
+    var zoom = jc._zoom;
+    var ctx = canvas.getContext('2d');
+    var width = cropperWidth * zoom;
+    var height = cropperHeight * zoom;
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(bufferCanvas, 0, 0, width, height, 0, 0, width, height);
+  };
+}
+
+/* 
+ * 判断坐标点是否在裁剪框之内
+ */
+
+function inCropBox(jc, x, y) {
+  var canvas = jc.canvas;
+  var zoom = jc._zoom;
+  var width = jc.width;
+  var height = jc.height;
+  var cx = jc._x;
+  var cy = jc._y;
+
+  if (x > cx && x < cx + width * zoom && y > cy && y < cy + height * zoom) {
+    //在裁剪框之内
+    canvas.style.cursor = 'move';
+    return true;
+  } else {
+    //不在裁剪框之内
+    canvas.style.cursor = 'default';
+    return false;
+  }
+}
+
+var isDragging = false;
+var disX = 0;
+var disY = 0;
+/* 
+ * 鼠标或者touchstart回调，设置当前点击点距离裁剪框当前距离
+ */
+
+function down(jc) {
+  return function (e) {
+    var event = getEvent(e);
+    var canvas = jc.canvas;
+    var cx = jc._x;
+    var cy = jc._y;
+    var ref = window2canvas(canvas, event.clientX, event.clientY);
+    var x = ref.x;
+    var y = ref.y;
+    isDragging = inCropBox(jc, x, y);
+    disX = x - cx;
+    disY = y - cy;
+    jc.isDragging = isDragging;
+  };
+}
+/* 
+ * 设置裁剪框坐标，重绘画布
+ */
+
+
+function move(jc) {
+  return function (e) {
+    var event = getEvent(e);
+    var canvas = jc.canvas;
+    var width = jc.width;
+    var height = jc.height;
+    var cropperWidth = jc.cropperWidth;
+    var cropperHeight = jc.cropperHeight;
+    var zoom = jc._zoom;
+    var ref = window2canvas(canvas, event.clientX, event.clientY);
+    var x = ref.x;
+    var y = ref.y;
+    var limitX = (cropperWidth - width) * zoom; //x坐标不超出图片右边
+
+    var limitY = (cropperHeight - height) * zoom; //x欧标不超出图片下边
+
+    inCropBox(jc, x, y);
+
+    if (isDragging) {
+      jc._x = Math.max(0, Math.min(limitX, x - disX));
+      jc._y = Math.max(0, Math.min(limitY, y - disY));
+
+      jc._redraw();
+    }
+  };
+}
+/* 
+ * 放弃拖拽，重绘画布
+ */
+
+
+function up(jc) {
+  return function (e) {
+    jc.isDragging = isDragging = false;
+
+    jc._redraw();
+  };
+}
+
+function eventMixin(JSCropper) {
+  JSCropper.prototype._bindDrag = function () {
+    var jc = this;
+    on(window, 'mousedown', down(jc), false);
+    on(window, 'mousemove', move(jc), false);
+    on(window, 'mouseup', up(jc), false);
+    on(window, 'touchstart', down(jc), false);
+    on(window, 'touchmove', move(jc), false);
+    on(window, 'touchend', up(jc), false);
+  };
+}
+
+var toLowerCase$1 = String.prototype.toLowerCase;
+/* 
+ * 图片加载失败，抛出错误
+ */
+
+function loadFail() {
+  callHook(jc, 'imgLoaded');
+  throw new Error('Load image fail, please check your image');
+}
+/* 
+ * 根据配置加载图片
+ * 
+ * 图片为String类型则作为图片路径处理
+ * 图片是Image对象，则直接使用
+ * 其他类型抛出错误
+ */
+
+
+function loadImage(jc) {
+  var img = jc.img;
+
+  if (!img || img === jc._img) {
+    return;
+  }
+
+  callHook(jc, 'beforeImgLoaded');
+
+  if (typeOf(img) === 'string') {
+    var targetImg = new Image();
+
+    targetImg.onload = function () {
+      jc._sourceImg = targetImg;
+      jc._img = img;
+      callHook(jc, 'imgLoaded');
+    };
+
+    targetImg.onerror = loadFail;
+    targetImg.src = img;
+  } else if (typeOf(img) === 'object' && toLowerCase$1.call(img) === 'img' && img.nodeType === 1) {
+    img.onload = function () {
+      jc._sourceImg = img;
+      jc._img = img;
+      callHook(jc, 'imgLoaded');
+    };
+
+    img.onerror = loadFail;
+  } else {
+    loadFail();
+  }
+}
+/* 
+ * 初始化图片大小，等比缩放至画布大小
+ */
+
+
+function initImage(jc) {
+  if (!jc._sourceImg) {
+    return;
+  }
+
+  var cropperWidth = jc.cropperWidth;
+  var cropperHeight = jc.cropperHeight;
+  var zoom = jc._zoom;
+  var jc_sourceImg = jc._sourceImg;
+  var width = jc_sourceImg.width;
+  var height = jc_sourceImg.height;
+  var ratio = Math.min(cropperWidth / width, cropperHeight / height);
+  Object.assign(jc, {
+    _imgWidth: width * ratio * zoom,
+    _imgHeight: height * ratio * zoom
+  });
+}
+/* 
+ * 向画布中绘制背景图，并保存绘图数据
+ */
+
+
+function drawImage(jc) {
+  if (!jc._sourceImg) {
+    return;
+  }
+
+  initImage(jc);
+  var bufferCanvas = jc.bufferCanvas;
+  var sourceImg = jc._sourceImg;
+  var cropperWidth = jc.cropperWidth;
+  var cropperHeight = jc.cropperHeight;
+  var imgWidth = jc._imgWidth;
+  var imgHeight = jc._imgHeight;
+  var zoom = jc._zoom;
+  var width = sourceImg.width;
+  var height = sourceImg.height;
+  var ctx = bufferCanvas.getContext('2d');
+  var dx = (cropperWidth * zoom - imgWidth) / 2;
+  var dy = (cropperHeight * zoom - imgHeight) / 2;
+  ctx.clearRect(0, 0, cropperWidth * zoom, cropperHeight * zoom);
+  ctx.drawImage(sourceImg, 0, 0, width, height, dx, dy, imgWidth, imgHeight);
+}
+
 function drawMixin(JSCropper) {
   var cropperImage = null;
+  /* 
+  * 异步图片加载，加载完成后重绘画布
+   */
 
   JSCropper.prototype._observeImg = function () {
     var jc = this;
@@ -724,31 +835,40 @@ function drawMixin(JSCropper) {
           return;
         }
 
-        jc._img = cropperImage = newVal;
-        initImage(jc);
-        drawImage(jc);
-        drawCropBox(jc);
+        cropperImage = newVal;
 
-        jc._renderOffScreen();
+        jc._redraw();
       },
       get: function get() {
         return cropperImage;
       }
     });
   };
+  /* 
+  * 重新绘制裁剪画布
+   */
+
 
   JSCropper.prototype._redraw = function () {
     var jc = this;
-    jc._zoom = getZoom();
+    jc._zoom = getZoom(); //初始化缩放比例
 
-    jc._resizeCanvas();
+    jc._resizeCanvas(); //根据比例初始化画布尺寸
 
-    jc._offscreenBuffering(jc);
 
-    loadImage(jc);
-    drawCropBox(jc);
+    jc._offscreenBuffering(jc); //初始化离屏画布
 
-    jc._renderOffScreen();
+
+    loadImage(jc); //加载图片
+
+    drawImage(jc); //图片绘制在离屏画布上
+
+    drawCropBox(jc); //绘制裁剪框在离屏画布上
+
+    jc._renderOffScreen(); //离屏画布渲染到裁剪画布上
+
+
+    callHook(jc, 'onUpdate');
   };
 }
 

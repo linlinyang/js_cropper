@@ -35,6 +35,7 @@
 
 	<input type="file" accept="image/jpeg,image/jpg,image/png">
 
+	<button>Cut</button>
 	<script>
 
 		window.addEventListener('DOMContentLoaded',ready,false);
@@ -53,12 +54,20 @@
 				reader.readAsDataURL(file);
 				reader.onload = function(e){
 
-					var img = new Image();
-					img.onload = function(){
-						console.log(img === img);
-					}
-					img.src = this.result;
+					var result = this.result;
+					jc.update({
+						img: result
+					});
 				};
+			},false);
+
+			var button = document.getElementsByTagName('button')[0];
+			button.addEventListener('click',function(){
+				var img = new Image();
+				img.onload = function(){
+					document.body.appendChild(img);
+				};
+				img.src = jc.cut();
 			},false);
 		}
 

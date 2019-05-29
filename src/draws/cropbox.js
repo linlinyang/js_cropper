@@ -37,18 +37,20 @@ function drawShadow(jc){
         isDragging
     } = jc;
     const ctx = bufferCanvas.getContext('2d');
-
     ctx.save();
 
     ctx.beginPath();
     rect( ctx, 0, 0, cropperWidth * zoom, cropperHeight * zoom );//顺时针画外框
     rect( ctx, x, y, width * zoom, height * zoom,true );//逆时针画内框
     ctx.fillStyle = isDragging ? jc.selectBackColor : jc.inSelectBackColor;
-    ctx.fill();//根据环绕原则，填充颜色
+    ctx.fill();//根据环绕原则，填充镂空阴影颜色
 
     ctx.restore();
 }
 
+/* 
+* 绘制裁剪框表格，裁剪框边框以及中间虚线
+ */
 function drawCropGride(jc){
     const {
         bufferCanvas,
@@ -115,6 +117,9 @@ function drawCropGride(jc){
     ctx.restore();
 }
 
+/* 
+* 绘制裁剪框
+ */
 function drawCropBox(jc){
     const {
         bufferCanvas,
@@ -128,7 +133,6 @@ function drawCropBox(jc){
 
     const ctx = bufferCanvas.getContext('2d');
     ctx.save();
-
     drawShadow(jc);
     drawCropGride(jc);
 

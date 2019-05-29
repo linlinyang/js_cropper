@@ -86,6 +86,7 @@ function lifyCircleMixin(JSCropper){
         resultCanvas.style.height = cHeight + 'px';
         rstCtx.putImageData(ctx.getImageData(x,y,cWidth * zoom,cHeight * zoom),0,0);
 
+        tempCanvas = ctx = null;
         return resultCanvas.toDataURL(imgType,quality);
     };
     

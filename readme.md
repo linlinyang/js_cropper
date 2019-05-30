@@ -1,9 +1,7 @@
 
 ## js_cropper使用文档 ##
 <p align='center'>
-<img alt="npm bundle size" src="https://img.shields.io/bundlephobia/min/vue-tap-directive.svg">
-<img alt="npm" src="https://img.shields.io/npm/v/vue-tap-directive.svg">
-<img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/linlinyang/vueTap.svg">
+<img alt="npm" src="https://img.shields.io/npm/v/@yanglinlin/js_cropper.svg">
 </p>
 
 **js_cropper** 是一款使用html5画布元素进行图片裁剪压缩的js框架
@@ -17,7 +15,7 @@
 2、npm安装
 
 ```
-npm i -D js_cropper
+npm i @yanglinlin/js_cropper
 ```
 
 ### 使用 ###

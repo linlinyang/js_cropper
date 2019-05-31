@@ -1,6 +1,6 @@
 {
   "name": "@yanglinlin/js_cropper",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "use html5 canvas to cropper imgage and compress it",
   "main": "dist/JSCropper.min.js",
   "module": "dist/JSCropper.esm.js",

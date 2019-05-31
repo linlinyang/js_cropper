@@ -31,6 +31,7 @@ function loadImage(jc){
             jc._img = img;
             callHook(jc,'imgLoaded');
         };
+        img.crossOrigin = 'Anonymous';
         targetImg.onerror = loadFail;
         targetImg.src = img;
     }else if( typeOf(img) === 'object' && toLowerCase.call(img) === 'img' && img.nodeType === 1 ){
@@ -39,6 +40,7 @@ function loadImage(jc){
             jc._img = img;
             callHook(jc,'imgLoaded');
         }
+        img.crossOrigin = 'Anonymous';
         img.onerror = loadFail;
     }else{
         loadFail();

@@ -778,6 +778,7 @@
           callHook(jc, 'imgLoaded');
         };
 
+        img.crossOrigin = 'Anonymous';
         targetImg.onerror = loadFail;
         targetImg.src = img;
       } else if (typeOf(img) === 'object' && toLowerCase$1.call(img) === 'img' && img.nodeType === 1) {
@@ -787,6 +788,7 @@
           callHook(jc, 'imgLoaded');
         };
 
+        img.crossOrigin = 'Anonymous';
         img.onerror = loadFail;
       } else {
         loadFail();

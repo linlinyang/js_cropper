@@ -2,6 +2,7 @@
 ## js_cropper使用文档 ##
 <p align='center'>
 <img alt="npm" src="https://img.shields.io/npm/v/@yanglinlin/js_cropper.svg">
+<img alt="npm" src="https://img.shields.io/npm/dw/@yanglinlin/js_cropper.svg">
 </p>
 
 **js_cropper** 是一款使用html5画布元素进行图片裁剪压缩的js框架

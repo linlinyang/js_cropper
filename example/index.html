@@ -30,52 +30,6 @@
 			margin-top: 30px;
 		}
 
-		.add-file{
-			margin-top: 10px;
-			width: 100%;
-			height: 10vw;
-			position: relative;
-			overflow: hidden;
-		}
-
-		.add-file .add{
-			width: 10vw;
-			height: 10vw;
-			margin: 0 auto;
-			border: 1px solid #ccc;
-			position: relative;
-			overflow: hidden;
-			display: block;
-			cursor: pointer;
-		}
-		.add-file .add input{
-			display: block;
-			width: 100%;
-			height: 100%;
-			opacity: 0;
-			cursor: pointer;
-		}
-		.add-file .add:before{
-			width: 7vw;
-			height: 0;
-			top: 50%;
-			margin-top: -0.5px;
-			border-top: 1px solid #ccc;
-			content: '';
-			position: absolute;
-			left: 1.5vw
-		}
-		.add-file .add:after{
-			height: 7vw;
-			width: 0;
-			left: 50%;
-			margin-left: -0.5px;
-			border-left: 1px solid #ccc;
-			content: '';
-			position: absolute;
-			top: 1.5vw
-		}
-
 		.cut{
 			appearance: none;
 			outline: none;
@@ -101,23 +55,6 @@
 			width: 300px;
 			display: block;
 		}
-		@media screen and ( max-width: 750px){
-			.add-file{
-				height: 60vw;
-			}
-			.add-file .add{
-				width: 50vw;
-				height: 50vw;
-			}
-			.add-file .add:before{
-				width: 35vw;
-				left: 7.5vw;
-			}
-			.add-file .add:after{
-				height: 35vw;
-				top: 7.5vw;
-			}
-		}
     </style>
     <script src="../dist/JSCropper.js"></script>
 </head>
@@ -127,13 +64,7 @@
 		<canvas id="cropper"></canvas>
 	</div>
 
-	<div class="add-file">
-		<div class="add">
-			<input type="file" accept="image/jpeg,image/jpg,image/png">
-		</div>
-	</div>
-
-	<button class="cut">Cut</button>
+	<button class="cut">裁剪</button>
 
 	<div class="preview">
 
@@ -149,20 +80,6 @@
 				debug: true
 			});
 			console.log(jc);
-
-			var input = document.querySelector('input');
-			input.addEventListener('change',function(e){
-				var file = input.files[0];
-				var reader = new FileReader();
-				reader.readAsDataURL(file);
-				reader.onload = function(e){
-
-					var result = this.result;
-					jc.update({
-						img: result
-					});
-				};
-			},false);
 
 			var button = document.getElementsByTagName('button')[0];
 			var preview = document.querySelector('.preview');

@@ -31,14 +31,16 @@ function drawMixin(JSCropper){
     /* 
     * 重新绘制裁剪画布
      */
-    JSCropper.prototype._redraw = function(){
+    JSCropper.prototype._redraw = function(isForce = false){
         const jc = this;
-        jc._zoom = getZoom();//初始化缩放比例
-        jc._resizeCanvas();//根据比例初始化画布尺寸
-        jc._offscreenBuffering(jc);//初始化离屏画布
+        if(isForce){
+            jc._zoom = getZoom();//初始化缩放比例
+            jc._resizeCanvas();//根据比例初始化画布尺寸
+            jc._offscreenBuffering(jc);//初始化离屏画布
+        }
         loadImage(jc);//加载图片
         drawImage(jc);//图片绘制在离屏画布上
-        drawCropBox(jc);//绘制裁剪框在离屏画布上
+        drawCropBox(jc,isForce);//绘制裁剪框在离屏画布上
         jc._renderOffScreen();//离屏画布渲染到裁剪画布上
         callHook(jc,'onUpdate');
     };

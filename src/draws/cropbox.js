@@ -120,15 +120,13 @@ function drawCropGride(jc){
 /* 
 * 绘制裁剪框
  */
-function drawCropBox(jc){
+function drawCropBox(jc,isForce){
     const {
         bufferCanvas,
         _x: x,
         _y: y
     } = jc;
-    if(x === undefined || y === undefined){
-        resetPos(jc);
-    }
+    isForce && resetPos(jc);
 
     const ctx = bufferCanvas.getContext('2d');
     ctx.save();

@@ -1,5 +1,6 @@
 import { off } from './events/listeners';
 import { resetPos } from './draws/cropbox';
+import { toFileSize } from './utils/tool';
 
 function callHook(jc,hook){
     const handler = jc[hook];
@@ -28,7 +29,7 @@ function lifyCircleMixin(JSCropper){
         const jc = this;
         jc.debug && console.log('更新参数，重绘裁剪框');
         Object.assign(jc,options);
-        jc._redraw();
+        jc._redraw(true);
     };
 
     JSCropper.prototype.destroy = function(){
@@ -92,7 +93,14 @@ function lifyCircleMixin(JSCropper){
 
         tempCanvas = ctx = rstCtx = null;
         jc.debug && console.warn('裁剪base64格式的图片，图片大小会受设备像素比影响，请注意设置图片尺寸');
-        return resultCanvas.toDataURL(imgType,quality);
+
+        const ret = resultCanvas.toDataURL(imgType,quality);
+        if(jc.debug){
+            let retStr = ret.replace(`data:${jc.imgType};base64,`,'');
+            console.log(`获得的裁剪图片尺寸：${toFileSize(retStr.length)}`);
+            console.log(`裁剪图片大小：${cWidth * zoom}×${cHeight * zoom}像素`);
+        }
+        return ret;
     };
     
 }

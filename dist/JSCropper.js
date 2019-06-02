@@ -1,5 +1,5 @@
 /* !
-  * JSCropper v1.0.1
+  * JSCropper v1.0.2
   * https://github.com/linlinyang/js_cropper.git
   * 
   * (c) 2019 Yang Lin
@@ -69,6 +69,15 @@
       canvas = null;
       return devicePixelRadio / backingStore;
     }
+    /* 
+     * 页面坐标转换为画布内坐标
+     * @params {HTMLCanvasElement} canvas,画布元素
+     * @params {Number} x,window坐标，距离屏幕左边框水平距离
+     * @params {Number} y,window坐标，距离屏幕上边框垂直距离
+     * 
+     * @return {Object};返回坐标点在画布元素内的坐标
+     */
+
 
     function window2canvas(canvas, x, y) {
       var width = canvas.width;
@@ -82,6 +91,20 @@
         x: (x - wX) * (width / wWidth),
         y: (y - wY) * (height / wHeight)
       };
+    }
+
+    function toFileSize(length) {
+      var bit = parseInt(length - length / 8 * 2);
+      var units = ['Bit', 'KB', 'MB', 'GB', 'TB'];
+      var len = units.length;
+
+      for (var i = 0; i < len; i++) {
+        if (bit >> 10 * i < 1024) {
+          return (bit / 1024).toFixed(1) + units[i];
+        }
+      }
+
+      return 'too large';
     }
 
     var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -400,15 +423,11 @@
      */
 
 
-    function drawCropBox(jc) {
+    function drawCropBox(jc, isForce) {
       var bufferCanvas = jc.bufferCanvas;
       var x = jc._x;
       var y = jc._y;
-
-      if (x === undefined || y === undefined) {
-        resetPos(jc);
-      }
-
+      isForce && resetPos(jc);
       var ctx = bufferCanvas.getContext('2d');
       ctx.save();
       drawShadow(jc);
@@ -443,7 +462,7 @@
         jc.debug && console.log('更新参数，重绘裁剪框');
         Object.assign(jc, options);
 
-        jc._redraw();
+        jc._redraw(true);
       };
 
       JSCropper.prototype.destroy = function () {
@@ -498,7 +517,15 @@
         rstCtx.putImageData(ctx.getImageData(x, y, cWidth * zoom, cHeight * zoom), 0, 0);
         tempCanvas = ctx = rstCtx = null;
         jc.debug && console.warn('裁剪base64格式的图片，图片大小会受设备像素比影响，请注意设置图片尺寸');
-        return resultCanvas.toDataURL(imgType, quality);
+        var ret = resultCanvas.toDataURL(imgType, quality);
+
+        if (jc.debug) {
+          var retStr = ret.replace("data:" + jc.imgType + ";base64,", '');
+          console.log("获得的裁剪图片尺寸：" + toFileSize(retStr.length));
+          console.log("裁剪图片大小：" + cWidth * zoom + "×" + cHeight * zoom + "像素");
+        }
+
+        return ret;
       };
     }
 
@@ -520,7 +547,7 @@
 
         jc._observeImg();
 
-        jc._redraw();
+        jc._redraw(true);
 
         jc._bindDrag();
 
@@ -545,6 +572,29 @@
       };
     }
 
+    var toLowerCase = String.prototype.toLowerCase;
+    /* 
+     * 判断一个对象是不是html元素
+     * @params {Object} el;待检测的对象
+     * 
+     * @return Boolean；返回是否是html元素
+     */
+
+    function isHtmlElement(el) {
+      return el instanceof HTMLElement;
+    }
+    /* 
+     * 判断一个对象是不是canvas元素
+     * @params {Object} el;待检测的对象
+     * 
+     * @return Boolean；返回是否是canvas元素
+     */
+
+
+    function isCanvas(el) {
+      return el instanceof HTMLCanvasElement;
+    }
+
     function canvasMixin(JSCropper) {
       /* 
       * 如果用户传递进来的el是画布元素，则使用改画布元素，否则创建之
@@ -554,30 +604,25 @@
         var jc = this;
         callHook(jc, 'beforeCreate');
         var el = jc.el;
-        var canvas;
+        var $el = typeof el === 'string' ? document.querySelector(el) : isCanvas(el) && el;
 
-        if (typeOf(el) === 'string') {
-          canvas = document.querySelector(el);
-          jc.debug && canvas && console.log('使用选择器查找画布元素：', canvas);
-        } else if (typeOf(el) === 'object' && toLowerCase.call(el.nodeName) === 'canvas' && el.nodeType === 1) {
-          canvas = el;
-          jc.debug && canvas && console.log('使用提供的画布元素：', canvas);
+        if ($el && toLowerCase.call($el.nodeName) === 'canvas' && $el.nodeType === 1) {
+          //传入参数el为画布元素
+          jc.canvas = $el;
+          jc.debug && console.log('使用传入的canvas元素', $el);
+          return;
         }
 
-        if (!canvas) {
-          canvas = document.createElement('canvas');
-          canvas.innerHTML = 'Your browser does not support canvas';
-          jc.debug && console.log('传入的不是画布元素，创建一个新的画布元素：', canvas);
-        }
+        var canvas = document.createElement('canvas');
+        canvas.innerHTML = '你的浏览器不支持画布元素';
+        jc.debug && console.log('创建一个新的画布元素：', canvas);
+        jc.canvas = canvas;
+        var wrapEl = typeof el === 'string' ? document.querySelector(el) : isHtmlElement(el) && el;
 
-        var wrapEl = typeOf(el) === 'string' ? document.querySelector(el) : el || null;
-
-        if (wrapEl && typeOf(wrapEl) === 'object' && wrapEl.nodeType === 1) {
+        if (wrapEl && wrapEl.nodeType === 1) {
           wrapEl.appendChild(canvas);
           jc.debug && console.wran('将画布添加至el对应的元素,请注意设置样式');
         }
-
-        jc.canvas = canvas;
       };
       /* 
       * 重置画布尺寸，设置画布的绘图表面大小和元素大小
@@ -778,7 +823,7 @@
           callHook(jc, 'imgLoaded');
         };
 
-        img.crossOrigin = 'Anonymous';
+        targetImg.crossOrigin = 'Anonymous';
         targetImg.onerror = loadFail;
         targetImg.src = img;
       } else if (typeOf(img) === 'object' && toLowerCase$1.call(img) === 'img' && img.nodeType === 1) {
@@ -871,21 +916,25 @@
        */
 
 
-      JSCropper.prototype._redraw = function () {
+      JSCropper.prototype._redraw = function (isForce) {
+        if (isForce === void 0) isForce = false;
         var jc = this;
-        jc._zoom = getZoom(); //初始化缩放比例
 
-        jc._resizeCanvas(); //根据比例初始化画布尺寸
+        if (isForce) {
+          jc._zoom = getZoom(); //初始化缩放比例
+
+          jc._resizeCanvas(); //根据比例初始化画布尺寸
 
 
-        jc._offscreenBuffering(jc); //初始化离屏画布
+          jc._offscreenBuffering(jc); //初始化离屏画布
 
+        }
 
         loadImage(jc); //加载图片
 
         drawImage(jc); //图片绘制在离屏画布上
 
-        drawCropBox(jc); //绘制裁剪框在离屏画布上
+        drawCropBox(jc, isForce); //绘制裁剪框在离屏画布上
 
         jc._renderOffScreen(); //离屏画布渲染到裁剪画布上
 
@@ -905,7 +954,7 @@
     canvasMixin(JSCropper);
     eventMixin(JSCropper);
     drawMixin(JSCropper);
-    JSCropper.version = '1.0.1';
+    JSCropper.version = '1.0.2';
 
     return JSCropper;
 

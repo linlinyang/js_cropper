@@ -20,6 +20,28 @@ function resizeCanvas(canvas,width,height,zoom = 1){
     };
 }
 
+const toLowerCase = String.prototype.toLowerCase;
+
+/* 
+ * 判断一个对象是不是html元素
+ * @params {Object} el;待检测的对象
+ * 
+ * @return Boolean；返回是否是html元素
+ */
+function isHtmlElement(el){
+    return el instanceof HTMLElement;
+}
+
+/* 
+ * 判断一个对象是不是canvas元素
+ * @params {Object} el;待检测的对象
+ * 
+ * @return Boolean；返回是否是canvas元素
+ */
+function isCanvas(el){
+    return el instanceof HTMLCanvasElement;
+}
+
 function canvasMixin(JSCropper){
     /* 
     * 如果用户传递进来的el是画布元素，则使用改画布元素，否则创建之
@@ -29,31 +51,29 @@ function canvasMixin(JSCropper){
         const jc = this;
         
         callHook(jc,'beforeCreate');
+
         const el = jc.el;
-        let canvas;
+        const $el = typeof el === 'string' ? document.querySelector(el) : isCanvas( el ) && el;
 
-        if( typeOf( el ) === 'string' ){
-            canvas = document.querySelector(el);
-            jc.debug && canvas && console.log('使用选择器查找画布元素：',canvas);
-        }else if( typeOf( el ) === 'object' && toLowerCase.call(el.nodeName) === 'canvas' && el.nodeType === 1 ){
-            canvas = el;
-            jc.debug && canvas && console.log('使用提供的画布元素：',canvas);
+        if($el && toLowerCase.call($el.nodeName) === 'canvas' && $el.nodeType === 1){//传入参数el为画布元素
+            jc.canvas = $el;
+            jc.debug && console.log('使用传入的canvas元素',$el);
+            return ;
         }
 
-        if(!canvas){
-            canvas = document.createElement('canvas');
-            canvas.innerHTML = 'Your browser does not support canvas';
-            jc.debug && console.log('传入的不是画布元素，创建一个新的画布元素：',canvas);
-        }
+        const canvas = document.createElement('canvas');
+        canvas.innerHTML = '你的浏览器不支持画布元素';
+        jc.debug && console.log('创建一个新的画布元素：',canvas);
+        jc.canvas = canvas;
 
-        const wrapEl = typeOf( el ) === 'string' 
+        const wrapEl = typeof el === 'string' 
             ?  document.querySelector(el)
-            : el || null;
-        if( wrapEl && typeOf( wrapEl ) === 'object' && wrapEl.nodeType === 1 ){
+            : isHtmlElement( el ) && el;
+            
+        if( wrapEl && wrapEl.nodeType === 1 ){
             wrapEl.appendChild(canvas);
             jc.debug && console.wran('将画布添加至el对应的元素,请注意设置样式');
         }
-        jc.canvas = canvas;
     };
 
     /* 
@@ -61,7 +81,7 @@ function canvasMixin(JSCropper){
      */
     JSCropper.prototype._resizeCanvas = function(){
         const jc = this;
-
+        
         const {
             canvas,
             _zoom: zoom,

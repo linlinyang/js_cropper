@@ -15,7 +15,11 @@
     "type": "git",
     "url": "git+https://github.com/linlinyang/js_cropper.git"
   },
-  "keywords": ["canvas","cropper","compress"],
+  "keywords": [
+    "canvas",
+    "cropper",
+    "compress"
+  ],
   "author": "Yang Lin",
   "license": "ISC",
   "devDependencies": {

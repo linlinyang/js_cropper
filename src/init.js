@@ -17,7 +17,7 @@ function initMixin(JSCropper){
 
         jc._initCanvas();
         jc._observeImg();
-        jc._redraw();
+        jc._redraw(true);
         jc._bindDrag();
 
         callHook(jc,'created');

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>EL为非canvas元素</title>
+    <style>
+    
+        .cropper{
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            text-align: center;
+            z-index: 999;
+            display: none;
+            background-color: #fff;
+        }
+        .cropper canvas{
+            z-index: 2;
+        }
+        .cropper .btns{
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 60px;
+            line-height: 60px;
+            z-index: 10;
+        }
+        .upload{
+            width: 50vw;
+            height: 50vw;
+            margin: 10vh auto 0;
+            cursor: pointer;
+            position: relative;
+            border: 1px solid #ccc;
+            z-index: 1;
+        }
+        .upload:before{
+            content: '';
+            width: 30vw;
+            height: 0;
+            margin-top: -0.5px;
+            border-top: 1px solid #ccc;
+            position: absolute;
+            top: 50%;
+            left: 10vw;
+            z-index: 2;
+        }
+        .upload:after{
+            content: '';
+            width: 0;
+            height: 30vw;
+            border-left: 1px solid #ccc;
+            margin-left: -0.5px;
+            position: absolute;
+            left: 50%;
+            top: 10vw;
+            z-index: 2;
+        }
+        .upload input{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            z-index: 10;
+            display: block;
+            cursor: pointer;
+        }
+    
+    </style>
+</head>
+<body>
+
+    <div class="cropper">
+        <div class="btns">
+            <div class="cut">确定</div>
+            <div class="cancel">取消</div>
+        </div>
+    </div>
+
+    <div class="upload">
+        <input type="file" accept="image/png,image/jpeg,image/jpeg">
+    </div>
+
+    <script src="../dist/JSCropper.js"></script>
+    <script>
+    
+        window.addEventListener('DOMContentLoaded',ready,false);
+
+        var jc;
+        var cropperEl = document.querySelector('.cropper');
+        function ready(){
+            cropper();
+            var ipt = document.querySelector('input');
+            ipt.addEventListener('change',function(){
+                var file = ipt.files[0],
+                    reader = new FileReader();
+
+                reader.onload = function(){
+                    jc && jc.update({
+                        img: reader.result
+                    });
+                    cropperEl.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            },false);
+        }
+
+        window.addEventListener('resize',cropper,false);
+
+        var rootEl = document.documentElement || document.body;
+        function cropper(){
+            var cropperWidth = Math.max(rootEl.offsetWidth,rootEl.clientWidth),
+                cropperHeight = Math.max(rootEl.offsetHeight,rootEl.clientHeight);
+            if(!jc){
+                jc = new JSCropper({
+                    el: '.cropper',
+                    cropperWidth: cropperWidth,
+                    cropperHeight: cropperHeight
+                });
+            }else{
+                jc.update({
+                    cropperWidth: cropperWidth,
+                    cropperHeight: cropperHeight
+                });
+            }
+        }
+    
+    </script>
+    
+</body>
+</html>

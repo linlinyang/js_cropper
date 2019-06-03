@@ -1,5 +1,5 @@
 /* !
-  * JSCropper v1.1.0
+  * JSCropper v1.1.1
   * https://github.com/linlinyang/js_cropper.git
   * 
   * (c) 2019 Yang Lin
@@ -467,8 +467,8 @@ function lifyCircleMixin(JSCropper) {
     off();
     jc.canvas = jc.bufferCanvas = jc._sourceImg = jc._originOpts = null;
     callHook(jc, 'destoryed');
-    jc = null;
     jc.debug && console.log('销毁裁剪框');
+    jc = null;
   };
 
   JSCropper.prototype.reset = function () {
@@ -702,13 +702,10 @@ function inCropBox(jc, x, y) {
     return false;
   }
 }
-
-var isDragging = false;
-var disX = 0;
-var disY = 0;
 /* 
  * 鼠标或者touchstart回调，设置当前点击点距离裁剪框当前距离
  */
+
 
 function down(jc) {
   return function (e) {
@@ -719,10 +716,11 @@ function down(jc) {
     var ref = window2canvas(canvas, event.clientX, event.clientY);
     var x = ref.x;
     var y = ref.y;
-    isDragging = inCropBox(jc, x, y);
-    disX = x - cx;
-    disY = y - cy;
-    jc.isDragging = isDragging;
+    Object.assign(jc, {
+      isDragging: inCropBox(jc, x, y),
+      _disX: x - cx,
+      _disY: y - cy
+    });
   };
 }
 /* 
@@ -739,6 +737,9 @@ function move(jc) {
     var cropperWidth = jc.cropperWidth;
     var cropperHeight = jc.cropperHeight;
     var zoom = jc._zoom;
+    var isDragging = jc.isDragging;
+    var disX = jc._disX;
+    var disY = jc._disY;
     var ref = window2canvas(canvas, event.clientX, event.clientY);
     var x = ref.x;
     var y = ref.y;
@@ -765,7 +766,7 @@ function move(jc) {
 
 function up(jc) {
   return function (e) {
-    jc.isDragging = isDragging = false;
+    jc.isDragging = false;
 
     jc._redraw();
   };
@@ -950,6 +951,6 @@ lifyCircleMixin(JSCropper);
 canvasMixin(JSCropper);
 eventMixin(JSCropper);
 drawMixin(JSCropper);
-JSCropper.version = '1.1.0';
+JSCropper.version = '1.1.1';
 
 module.exports = JSCropper;

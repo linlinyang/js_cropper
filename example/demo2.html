@@ -60,40 +60,23 @@
 </head>
 <body>
 
-	<div class="cropper-box">
-		<canvas id="cropper"></canvas>
-	</div>
+	<div class="cropper1"></div>
 
-	<button class="cut">裁剪</button>
+    <div class="cropper2"></div>
 
-	<div class="preview">
-
-	</div>
 	<script>
 
 		window.addEventListener('DOMContentLoaded',ready,false);
 
 		function ready(){
-			var jc = new JSCropper({
-				el: '#cropper',
-				img: './images/pic1.jpg',
-				debug: true
-			});
-			console.log(jc);
-
-			var button = document.getElementsByTagName('button')[0];
-			var preview = document.querySelector('.preview');
-			button.addEventListener('click',function(){
-				var img = new Image();
-				img.onload = function(){
-					preview.appendChild(img);
-				};
-				img.src = jc.cut();
-			},false);
-
-			setTimeout(function(){
-				jc.destroy();
-			},3000);
+			var jc1 = new JSCropper({
+				el: '.cropper1',
+				img: './images/pic1.jpg'
+            });
+            var jc2 = new JSCropper({
+                el: '.cropper2',
+                img: './images/pic2.jpg'
+            });
 		}
 
 	</script>

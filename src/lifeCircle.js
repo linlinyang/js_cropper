@@ -39,8 +39,8 @@ function lifyCircleMixin(JSCropper){
         off();
         jc.canvas = jc.bufferCanvas = jc._sourceImg = jc._originOpts = null;
         callHook(jc,'destoryed');
-        jc = null;
         jc.debug && console.log('销毁裁剪框');
+        jc = null;
     }
     
     JSCropper.prototype.reset = function(){

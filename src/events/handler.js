@@ -27,10 +27,6 @@ function inCropBox(jc,x,y){
     }
 }
 
-let isDragging = false;
-let disX = 0;
-let disY = 0;
-
 /* 
  * 鼠标或者touchstart回调，设置当前点击点距离裁剪框当前距离
  */
@@ -46,10 +42,11 @@ function down(jc){
             x,
             y
         } = window2canvas(canvas,event.clientX,event.clientY);
-        isDragging = inCropBox(jc,x,y);
-        disX = x - cx;
-        disY = y - cy;
-        jc.isDragging = isDragging;
+        Object.assign(jc,{
+            isDragging: inCropBox(jc,x,y),
+            _disX: x - cx,
+            _disY: y - cy
+        });
     }
 }
 
@@ -65,7 +62,10 @@ function move(jc){
             height,
             cropperWidth,
             cropperHeight,
-            _zoom: zoom
+            _zoom: zoom,
+            isDragging,
+            _disX: disX,
+            _disY: disY
         } = jc;
         const {
             x,
@@ -89,7 +89,7 @@ function move(jc){
  */
 function up(jc){
     return (e) => {
-        jc.isDragging = isDragging = false;
+        jc.isDragging = false;
         jc._redraw();
     }
 }

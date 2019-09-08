@@ -1,5 +1,5 @@
 /* !
-  * JSCropper v1.1.2
+  * JSCropper v1.1.3
   * https://github.com/linlinyang/js_cropper.git
   * 
   * (c) 2019 Yang Lin
@@ -844,6 +844,7 @@ function initImage(jc) {
     return;
   }
 
+  console.log(jc._sourceImg);
   var cropperWidth = jc.cropperWidth;
   var cropperHeight = jc.cropperHeight;
   var zoom = jc._zoom;
@@ -949,6 +950,6 @@ lifyCircleMixin(JSCropper);
 canvasMixin(JSCropper);
 eventMixin(JSCropper);
 drawMixin(JSCropper);
-JSCropper.version = '1.1.2';
+JSCropper.version = '1.1.3';
 
 export default JSCropper;

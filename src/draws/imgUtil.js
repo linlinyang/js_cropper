@@ -54,6 +54,7 @@ function initImage(jc){
     if(!jc._sourceImg){
         return ;
     }
+    console.log(jc._sourceImg);
     const {
         cropperWidth,
         cropperHeight,

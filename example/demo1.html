@@ -89,6 +89,7 @@
     </div>
 
     <script src="../dist/JSCropper.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
     <script>
     
         window.addEventListener('DOMContentLoaded',ready,false);
@@ -102,6 +103,10 @@
                 var file = ipt.files[0],
                     reader = new FileReader();
 
+                EXIF.getData(file,function(){
+                    Orientation = EXIF.getTag(this, 'Orientation');
+                    console.log(Orientation);
+                });
                 reader.onload = function(){
                     jc && jc.update({
                         img: reader.result

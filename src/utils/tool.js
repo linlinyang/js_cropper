@@ -21,7 +21,8 @@ function typeOf(any){
         '[object String]': 'string',
         '[object Function]': 'function',
         '[object Undefined]': 'undefined',
-        '[object Null]': 'null'
+        '[object Null]': 'null',
+        '[object Symbol]': 'symbol'
     };
 
     return map[type];

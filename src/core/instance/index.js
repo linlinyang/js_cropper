@@ -1,14 +1,14 @@
 /* /src/core/instance/index.js */
-import updateMixin from './updateMixin';
+import initMixin from './initMixin';
 
 class JSCropper{
 
     constructor(options){
-        this._update(options);
+        this._init(options);
     }
 
 }
 
-updateMixin(JSCropper);
+initMixin(JSCropper);
 
 export default JSCropper;

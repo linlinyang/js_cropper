@@ -1,22 +1,3 @@
-export default {
-    cropperWidth: 800,
-    cropperHeight: 600,
-    width: 300,
-    height: 300,
-    shadowColor: 'rgba(0,0,0,0.7)',
-    edgeLineColor: '#fff',
-    edgeLineWidth: 3,
-    dashLineColor: 'rgba(255,255,255,0.8)',
-    quality: 1,
-    imgType: 'image/png',
-    inSelectBackColor: 'rgba(0,0,0,0.6)',
-    selectBackColor: 'rgba(0,0,0,0.4)',
-    rotate: 0,
-    scale: 1,
-    drawCropperBox: true,
-    debug: true
-};
-
 const defaultOptions = {
     cropperWidth: { // 裁剪屏宽度
         type: Number,
@@ -34,7 +15,7 @@ const defaultOptions = {
         type: Number,
         default: 300
     },
-    showCropperBox: {
+    showCropperBox: { // 是否绘制裁剪框
         type: Boolean,
         default: true
     },
@@ -46,33 +27,80 @@ const defaultOptions = {
         type: Number,
         default: 3
     },
-    dashLineColor: { // 裁剪框中间虚线颜色
+    inSelecShadowColor: { // 未拖拽裁剪框时裁剪框时裁剪框外阴影颜色
         type: String,
-        default: 'rgba(255,255,255,0.8)'
+        default: 'rgba(0,0,0,0.6)'
+    },
+    selectShadowColor: { // 拖拽裁剪框时裁剪框外阴影颜色
+        type: String,
+        default: 'rgba(0,0,0,0.4)'
     },
     showDashLine: { // 是否显示裁剪框中间虚线
         type: Boolean,
         defualt: true
     },
+    dashLineColor: { // 裁剪框中间虚线颜色
+        type: String,
+        default: 'rgba(255,255,255,0.8)'
+    },
+    dashLineWidth: { // 虚线宽度
+        type: Number,
+        default: 3
+    },
     backColor: { // 画布背景色
         type: String,
-        validator(val){
-
-        }
+        defualt : 'rgba(0,0,0,0.7)'
     },
     imgType: { // 裁剪结果的图片类型
         type: String,
-        validator(val){
-            return ['image/jpeg','image/png','image/webp'].includes(val);
-        },
         default: 'image/png'
     },
     quality: { // 裁剪结果的图片质量
         type: Number,
-
+        validator(val){
+            return val >= 0 && val <= 1;
+        },
+        default: 1
+    },
+    rotateDeg: { //旋转角度
+        type: Number,
+        default: 0
+    },
+    scale: { // 缩放
+        type: Array,
+        default: [1,1]
+    },
+    debug: { // 是否显示调试信息
+        type: Boolean,
+        default: false
     }
 };
 
-export function mergeOptions(){
+export default function mergeOptions(options){
+    const ret = {};
 
+    Object.keys(defaultOptions).forEach(key => {
+        let value = options[key];
+        let {
+            type,
+            validator,
+            default: defaultVal
+        } = defaultOptions[key];
+        
+        if(type && !(value instanceof type)){
+            value = defaultVal;
+            console.warn(`Expect ${key}'s value is ${type} type.`);
+        }
+
+        if(validator && !validator(value)){
+            value = defaultVal;
+            console.warn(`Invalid ${key},custom validator check failed for ${key}`);
+        }
+
+        ret[key] = value === undefined 
+                    ? defaultVal
+                    : value;
+        
+        return ret;
+    });
 }

@@ -6,10 +6,10 @@ import {
     callhook
 } from './lifecycle';
 
-export default function updateMixin(JSCropper){
+export default function initMixin(JSCropper){
 
     let uid = 1;
-    JSCropper.prototype._update = function(options){
+    JSCropper.prototype._init = function(options){
         const jc = this;
 
         Object.assign(jc,configOptions,options);
@@ -24,7 +24,7 @@ export default function updateMixin(JSCropper){
     };
 
     JSCropper.prototype.update = function(options){
-        return this._update(options);
+        return this._init(options);
     }
 
 }

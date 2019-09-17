@@ -1,4 +1,15 @@
+import {
+    error
+} from '../utils/debug';
+import {
+    typeOf
+} from '../utils/tool';
+
 const defaultOptions = {
+    el: {
+        type: [String,Object],
+        required: true
+    },
     cropperWidth: { // 裁剪屏宽度
         type: Number,
         default: 800
@@ -84,23 +95,39 @@ export default function mergeOptions(options){
         let {
             type,
             validator,
-            default: defaultVal
+            default: defaultVal,
+            required
         } = defaultOptions[key];
         
-        if(type && !(value instanceof type)){
-            value = defaultVal;
-            console.warn(`Expect ${key}'s value is ${type} type.`);
+        if(!!required && value === undefined){ //check required
+            error(`Missing required prop ${key}.`);
         }
+        if(value !== undefined){
+            if(type){
+                const types = Array.isArray(type) ? type : [type];
+                let pass = false;
+                let nameStr = types.reduce((name,typeConstructor) => {
+                    pass = pass || (typeOf(value) === getType(typeConstructor).toLowerCase());
+                    return name += `${typeConstructor.name} or`;
+                },'');
+                !pass && error(`Expect ${key}'s value is ${nameStr.substring(0,nameStr.length - 3)} type.`);
+            }
 
-        if(validator && !validator(value)){
-            value = defaultVal;
-            console.warn(`Invalid ${key},custom validator check failed for ${key}`);
+            if(validator && !validator(value)){
+                error(`Invalid ${key},custom validator check failed for ${key}`);
+            }
         }
 
         ret[key] = value === undefined 
                     ? defaultVal
                     : value;
         
-        return ret;
     });
+
+    return ret;
+}
+
+function getType(constructor){
+    const match = constructor && constructor.toString().match(/^\s*function (\w+)/);
+    return match ? match[1] : '';
 }

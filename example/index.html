@@ -24,51 +24,11 @@
 			height: 100%
 		}
 
-		.cropper-box{
-			width: 100%;
-			text-align: center;
-			margin-top: 30px;
-		}
-
-		.cut{
-			appearance: none;
-			outline: none;
-			background-color: #1e9a1c;
-			color: #fff;
-			padding: 10px 20px;
-			font-size: 20px;
-			text-align: center;
-			border: 0;
-			border-radius: 4px;
-			margin: 10px auto 0;
-			display: block;
-		}
-		.preview{
-			width: 100%;
-			position: relative;
-			overflow: hidden;
-			display: flex;
-			justify-content: space-around;
-			align-items: center;
-		}
-		.preview img{
-			width: 300px;
-			display: block;
-		}
     </style>
     <script src="../dist/JSCropper.js"></script>
 </head>
 <body>
 
-	<div class="cropper-box">
-		<canvas id="cropper"></canvas>
-	</div>
-
-	<button class="cut">裁剪</button>
-
-	<div class="preview">
-
-	</div>
 	<script>
 
 		window.addEventListener('DOMContentLoaded',ready,false);
@@ -79,21 +39,6 @@
 				img: './images/pic1.jpg',
 				debug: true
 			});
-			console.log(jc);
-
-			var button = document.getElementsByTagName('button')[0];
-			var preview = document.querySelector('.preview');
-			button.addEventListener('click',function(){
-				var img = new Image();
-				img.onload = function(){
-					preview.appendChild(img);
-				};
-				img.src = jc.cut();
-			},false);
-
-			setTimeout(function(){
-				jc.destroy();
-			},3000);
 		}
 
 	</script>

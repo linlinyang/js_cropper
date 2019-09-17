@@ -1,7 +1,11 @@
 /* /src/core/instance/updateMixin */
 
-import configOptions from '../config';
 import initWrapper from './wrapper';
+import mergeOptions from '../config';
+import {
+    log
+} from '../../utils/debug';
+
 import {
     callhook
 } from './lifecycle';
@@ -12,10 +16,10 @@ export default function initMixin(JSCropper){
     JSCropper.prototype._init = function(options){
         const jc = this;
 
-        Object.assign(jc,configOptions,options);
+        Object.assign(jc,mergeOptions(options));
         jc._uid = uid++;
 
-        jc.debug && console.log('开始绘制裁剪窗...');
+        jc.debug && log('before create');
 
         callhook('breforeCreate');
         initWrapper(jc);

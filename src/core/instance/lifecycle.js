@@ -24,6 +24,10 @@ export function lifyCircleMixin(JSCropper){
 
     };
 
+    JSCropper.prototype.reset = function(){
+        const jc = this;
+    }
+
     JSCropper.prototype.destroyed = function(){
         const jc = this;
     };

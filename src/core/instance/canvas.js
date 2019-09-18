@@ -4,8 +4,5 @@ export function canvasMixin(JSCropper){
 
     };
     
-    JSCropper.prototype.reset = function(){
-
-    };
 
 };

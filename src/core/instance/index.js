@@ -1,11 +1,11 @@
 /* /src/core/instance/index.js */
-import initMixin from './initMixin';
+import initMixin from './init';
 import {
     lifyCircleMixin
 } from './lifecycle';
 import {
     canvasMixin
-} from './canvasMixin';
+} from './canvas';
 
 class JSCropper{
 

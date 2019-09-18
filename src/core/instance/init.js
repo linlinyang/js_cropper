@@ -16,7 +16,7 @@ export default function initMixin(JSCropper){
     JSCropper.prototype._init = function(options){
         const jc = this;
 
-        Object.assign(jc,mergeOptions(options));
+        Object.assign(jc,(jc.$options = mergeOptions(options)));
         jc._uid = uid++;
 
         jc.debug && log('before create');
@@ -26,9 +26,5 @@ export default function initMixin(JSCropper){
 
         return jc;
     };
-
-    JSCropper.prototype.update = function(options){
-        return this._init(options);
-    }
 
 }
